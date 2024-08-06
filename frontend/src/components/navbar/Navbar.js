@@ -18,6 +18,12 @@ const Navbar = () => {
         <Button color="inherit" component={Link} to="/contact">
           Contactez-nous
         </Button>
+        <Button color="inherit" component={Link} to="/login">
+          Connexion
+        </Button>
+        <Button color="inherit" component={Link} to="/register">
+          Inscription
+        </Button>
       </Toolbar>
     </AppBar>
   );
