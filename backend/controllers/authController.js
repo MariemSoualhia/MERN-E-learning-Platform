@@ -5,6 +5,7 @@ const User = require("../models/User");
 exports.register = async (req, res) => {
   const { name, email, password, role, specialty } = req.body;
   try {
+    console.log(req.body);
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ msg: "User already exists" });
@@ -38,7 +39,7 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    let user = await User.findOne({ email });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ msg: "Invalid Credentials" });
     }
@@ -52,9 +53,18 @@ exports.login = async (req, res) => {
         role: user.role,
       },
     };
-    jwt.sign(payload, "yourSecretKey", { expiresIn: 3600 }, (err, token) => {
-      if (err) throw err;
-      res.json({ token });
+    const token = jwt.sign(payload, "yourSecretKey", { expiresIn: "1h" });
+
+    res.status(200).json({
+      token: token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        photoProfil: user.photoProfil,
+        specialty: user.specialty,
+      },
     });
   } catch (err) {
     console.error(err.message);

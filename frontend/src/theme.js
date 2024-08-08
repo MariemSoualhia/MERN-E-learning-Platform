@@ -62,7 +62,7 @@ const theme = createTheme({
         root: {
           textTransform: "none",
           fontSize: "16px",
-          padding: "10px 20px",
+
           borderRadius: "8px",
 
           transition: "all 0.3s ease",
@@ -70,6 +70,7 @@ const theme = createTheme({
           color: "#FFFFFF",
           "&:hover": {
             backgroundColor: "#0D1B47", // Bleu Très Foncé pour le survol
+            boxShadow: "0px 5px 7px rgba(0, 0, 0, 0.3)",
           },
         },
       },

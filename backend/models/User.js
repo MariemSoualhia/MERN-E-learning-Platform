@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
-
+const defimg =
+  "https://cdn.pixabay.com/photo/2017/03/21/13/27/evil-2162179_640.png";
 const UserSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -25,6 +26,10 @@ const UserSchema = new mongoose.Schema({
     required: function () {
       return this.role === "formateur";
     },
+  },
+  photoProfil: {
+    type: String,
+    default: defimg,
   },
   date: {
     type: Date,

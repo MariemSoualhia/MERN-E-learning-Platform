@@ -1,4 +1,6 @@
-module.exports.isAdmin = (req, res, next) => {
+// middleware/roles.js
+
+exports.isAdmin = (req, res, next) => {
   if (req.user.role !== "admin") {
     return res
       .status(403)
@@ -7,7 +9,7 @@ module.exports.isAdmin = (req, res, next) => {
   next();
 };
 
-module.exports.isFormateur = (req, res, next) => {
+exports.isFormateur = (req, res, next) => {
   if (req.user.role !== "formateur") {
     return res
       .status(403)
@@ -16,7 +18,7 @@ module.exports.isFormateur = (req, res, next) => {
   next();
 };
 
-module.exports.isApprenant = (req, res, next) => {
+exports.isApprenant = (req, res, next) => {
   if (req.user.role !== "apprenant") {
     return res
       .status(403)

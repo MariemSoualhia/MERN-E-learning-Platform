@@ -30,12 +30,48 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      const res = await axios.post("/api/auth/login", { email, password });
-      localStorage.setItem("token", res.data.token);
-      navigate("/");
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message);
+      }
+
+      const responseData = await response.json();
+      const token = responseData.token;
+      const user = JSON.stringify(responseData.user);
+      localStorage.setItem("token", token);
+      localStorage.setItem("currentuser", user);
+
+      if (responseData && user) {
+        const userRole = JSON.parse(user).role;
+        switch (userRole) {
+          case "admin":
+            navigate("/admin");
+            break;
+          case "formateur":
+            navigate("/formateur");
+            break;
+          case "apprenant":
+            navigate("/apprenant");
+            break;
+          default:
+            navigate("/");
+        }
+      }
     } catch (err) {
-      console.error(err.response.data);
+      console.error(err.message);
     }
   };
 
