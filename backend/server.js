@@ -3,34 +3,40 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
+const http = require("http");
+const { Server } = require("socket.io");
 const connectDB = require("./db");
 const authRoutes = require("./routes/auth");
 const courseRoutes = require("./routes/courses");
-
 const userRoutes = require("./routes/user");
 const formationRoutes = require("./routes/formation");
+const socket = require("./socket");
 
 const app = express();
+const server = http.createServer(app);
+const io = socket.init(server);
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 connectDB();
+
+// Socket.io connection
+io.on("connection", (socket) => {
+  console.log("New client connected");
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
+  });
+});
+
 // Routes
-// Servir les fichiers statiques du répertoire 'uploads'
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
-
 app.use("/api/users", userRoutes);
 app.use("/api/formations", formationRoutes);
-// Créez un chemin absolu pour le dossier des uploads
-const uploadsDir = path.join(__dirname, "uploads");
 
-// Middleware pour servir les fichiers statiques
-app.use("/uploads", express.static(uploadsDir));
-
-// Ajouter cette route pour servir les images
 app.get("/static-images/:filename", (req, res) => {
   const filename = req.params.filename;
   const resolvedFilePath = path.join(__dirname, "uploads", filename);
@@ -43,5 +49,10 @@ app.get("/static-images/:filename", (req, res) => {
     res.sendFile(resolvedFilePath);
   });
 });
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+module.exports = app;

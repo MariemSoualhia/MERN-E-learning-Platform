@@ -22,7 +22,14 @@ import theme from "./theme";
 import PrivateRoute from "./components/PrivateRoute";
 import PublicRoute from "./components/PublicRoute";
 import Profile from "./components/Profil/Profile";
-
+import PendingFormations from "./components/Admin/PendingFormations";
+import ManageFormations from "./components/Admin/ManageFormations";
+import ManageApprenants from "./components/Admin/ManageApprenants";
+import ManageFormateurs from "./components/Admin/ManageFormateurs";
+import ApprenantFormations from "./components/Apprenant/ApprenantFormations";
+import FormationDetails from "./components/Apprenant/FormationDetails";
+import AdminPendingEnrollments from "./components/Admin/AdminPendingEnrollments";
+import MyEnrollments from "./components/Apprenant/MyEnrollments";
 const App = () => {
   return (
     <ThemeProvider theme={theme}>
@@ -96,6 +103,31 @@ const App = () => {
               }
             />
             <Route
+              path="/apprenant/formations/:specialty"
+              element={
+                <PrivateRoute>
+                  <ApprenantFormations />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/apprenant/formation/:formationId"
+              element={
+                <PrivateRoute>
+                  <FormationDetails />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/apprenant/myEnrollments"
+              element={
+                <PrivateRoute>
+                  <MyEnrollments />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
               path="/profile"
               element={
                 <PrivateRoute>
@@ -119,6 +151,47 @@ const App = () => {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/admin/pending-formations"
+              element={
+                <PrivateRoute>
+                  <PendingFormations />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/pending-inscriptions"
+              element={
+                <PrivateRoute>
+                  <AdminPendingEnrollments />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/formations"
+              element={
+                <PrivateRoute>
+                  <ManageFormations />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/formateurs"
+              element={
+                <PrivateRoute>
+                  <ManageFormateurs />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/apprenants"
+              element={
+                <PrivateRoute>
+                  <ManageApprenants />
+                </PrivateRoute>
+              }
+            />
+
             {/* Redirection vers la page de connexion pour toutes les autres URL */}
             <Route path="*" element={<Navigate to="/login" />} />
           </Routes>

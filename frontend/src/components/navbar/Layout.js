@@ -12,11 +12,23 @@ const Layout = ({ children }) => {
     "/profile",
     "/formateur/my-formations",
     "/formateur/add-formation",
+    "/admin/pending-formations",
+    "/admin/formations",
+    "/admin/formateurs",
+    "/admin/apprenants",
+    "/apprenant/formations",
+    "/admin/pending-inscriptions",
+    "/apprenant/my-enrollments",
   ];
+
+  const shouldHideNavbar =
+    hideNavbarRoutes.includes(location.pathname) ||
+    location.pathname.startsWith("/apprenant/formation/") ||
+    location.pathname.startsWith("/apprenant/formations/");
 
   return (
     <>
-      {!hideNavbarRoutes.includes(location.pathname) && <Navbar />}
+      {!shouldHideNavbar && <Navbar />}
       {children}
     </>
   );

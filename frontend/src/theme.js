@@ -12,8 +12,8 @@ const theme = createTheme({
       default: "#F1F1F1", // Gris Clair pour le fond
     },
     text: {
-      primary: "#424242", // Gris Foncé pour le texte
-      secondary: "#1E3A8A", // Bleu Foncé pour les liens et titres
+      primary: "#424242", // Texte gris foncé pour le reste de l'application
+      secondary: "#1E3A8A", // Texte bleu foncé pour les liens et titres
     },
   },
   typography: {
@@ -45,14 +45,13 @@ const theme = createTheme({
     body1: {
       fontFamily: "Georgia, serif",
       fontSize: "16px",
-      color: "#424242",
+      color: "#424242", // Texte en gris foncé pour le corps
     },
     button: {
       textTransform: "none",
       fontSize: "16px",
       padding: "10px 20px",
       borderRadius: "8px",
-
       transition: "all 0.3s ease",
     },
   },
@@ -62,12 +61,10 @@ const theme = createTheme({
         root: {
           textTransform: "none",
           fontSize: "16px",
-
           borderRadius: "8px",
-
           transition: "all 0.3s ease",
           backgroundColor: "#1E3A8A", // Bleu Foncé
-          color: "#FFFFFF",
+          color: "#FFFFFF", // Texte des boutons en blanc
           "&:hover": {
             backgroundColor: "#0D1B47", // Bleu Très Foncé pour le survol
             boxShadow: "0px 5px 7px rgba(0, 0, 0, 0.3)",
@@ -86,22 +83,37 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           "& label.Mui-focused": {
-            color: "#1E3A8A",
+            color: "#1E3A8A", // Couleur du label des champs de texte en bleu foncé
           },
           "& .MuiInput-underline:after": {
-            borderBottomColor: "#1E3A8A",
+            borderBottomColor: "#1E3A8A", // Soulignement en bleu foncé
           },
           "& .MuiOutlinedInput-root": {
             "& fieldset": {
-              borderColor: "#424242",
+              borderColor: "#424242", // Bordure des champs de texte en gris foncé
             },
             "&:hover fieldset": {
-              borderColor: "#1E3A8A",
+              borderColor: "#1E3A8A", // Bordure en bleu foncé au survol
             },
             "&.Mui-focused fieldset": {
-              borderColor: "#1E3A8A",
+              borderColor: "#1E3A8A", // Bordure en bleu foncé lorsque le champ est actif
             },
+            color: "#424242", // Texte des champs de texte en gris foncé
           },
+        },
+      },
+    },
+    MuiListItemText: {
+      styleOverrides: {
+        root: {
+          color: "#FFFFFF", // Texte blanc pour les éléments du menu latéral
+        },
+      },
+    },
+    MuiListItemIcon: {
+      styleOverrides: {
+        root: {
+          color: "#FFFFFF", // Icônes en blanc pour les éléments du menu latéral
         },
       },
     },

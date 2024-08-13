@@ -88,83 +88,74 @@ const AddFormation = () => {
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ display: "flex", minHeight: "100vh", width: "100%" }}>
-        <Sidebar role="formateur" />
-        <Container
-          sx={{
-            padding: 0,
-            margin: 0,
-            backgroundColor: theme.palette.background.default,
-            width: "100%",
-          }}
-        >
-          <Typography variant="h2" component="h1" gutterBottom>
-            Ajouter une formation
-          </Typography>
-          <StyledForm form={form} layout="vertical" onFinish={handleFinish}>
-            <Form.Item
-              name="title"
-              label="Titre"
-              rules={[{ required: true, message: "Veuillez entrer le titre" }]}
+    <Box sx={{ margin: "50px", display: "flex", minHeight: "100vh" }}>
+      <Sidebar role="formateur" />
+      <Container sx={{ flexGrow: 1, p: 3, backgroundColor: "#f4f6f8" }}>
+        <Typography variant="h2" component="h1" gutterBottom>
+          Ajouter une formation
+        </Typography>
+        <StyledForm form={form} layout="vertical" onFinish={handleFinish}>
+          <Form.Item
+            name="title"
+            label="Titre"
+            rules={[{ required: true, message: "Veuillez entrer le titre" }]}
+          >
+            <Input placeholder="Titre" />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="Description"
+            rules={[
+              { required: true, message: "Veuillez entrer la description" },
+            ]}
+          >
+            <Input.TextArea placeholder="Description" />
+          </Form.Item>
+          <Form.Item
+            name="dateRange"
+            label="Date de début et de fin"
+            rules={[
+              { required: true, message: "Veuillez sélectionner les dates" },
+            ]}
+          >
+            <RangePicker />
+          </Form.Item>
+          <Form.Item
+            name="duree"
+            label="Durée (heures)"
+            rules={[{ required: true, message: "Veuillez entrer la durée" }]}
+          >
+            <InputNumber min={1} placeholder="Durée (heures)" />
+          </Form.Item>
+          <Form.Item
+            name="prix"
+            label="Prix"
+            rules={[{ required: true, message: "Veuillez entrer le prix" }]}
+          >
+            <InputNumber min={0} placeholder="Prix" />
+          </Form.Item>
+          <Form.Item
+            name="image"
+            label="Image"
+            valuePropName="fileList"
+            getValueFromEvent={handleFileChange}
+          >
+            <Upload
+              listType="picture"
+              beforeUpload={() => false}
+              onChange={handleFileChange}
             >
-              <Input placeholder="Titre" />
-            </Form.Item>
-            <Form.Item
-              name="description"
-              label="Description"
-              rules={[
-                { required: true, message: "Veuillez entrer la description" },
-              ]}
-            >
-              <Input.TextArea placeholder="Description" />
-            </Form.Item>
-            <Form.Item
-              name="dateRange"
-              label="Date de début et de fin"
-              rules={[
-                { required: true, message: "Veuillez sélectionner les dates" },
-              ]}
-            >
-              <RangePicker />
-            </Form.Item>
-            <Form.Item
-              name="duree"
-              label="Durée (heures)"
-              rules={[{ required: true, message: "Veuillez entrer la durée" }]}
-            >
-              <InputNumber min={1} placeholder="Durée (heures)" />
-            </Form.Item>
-            <Form.Item
-              name="prix"
-              label="Prix"
-              rules={[{ required: true, message: "Veuillez entrer le prix" }]}
-            >
-              <InputNumber min={0} placeholder="Prix" />
-            </Form.Item>
-            <Form.Item
-              name="image"
-              label="Image"
-              valuePropName="fileList"
-              getValueFromEvent={handleFileChange}
-            >
-              <Upload
-                listType="picture"
-                beforeUpload={() => false}
-                onChange={handleFileChange}
-              >
-                <Button icon={<UploadOutlined />}>Upload Image</Button>
-              </Upload>
-            </Form.Item>
-            <Form.Item>
-              <Button type="primary" htmlType="submit">
-                Ajouter
-              </Button>
-            </Form.Item>
-          </StyledForm>
-        </Container>
-      </Box>
-    </ThemeProvider>
+              <Button icon={<UploadOutlined />}>Upload Image</Button>
+            </Upload>
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit">
+              Ajouter
+            </Button>
+          </Form.Item>
+        </StyledForm>
+      </Container>
+    </Box>
   );
 };
 

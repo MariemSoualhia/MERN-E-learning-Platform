@@ -4,7 +4,7 @@ import Sidebar from "../navbar/Sidebar";
 
 const ApprenantDashboard = () => {
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ margin: "20px", display: "flex", minHeight: "100vh" }}>
       <Sidebar role="apprenant" />
       <Container sx={{ flexGrow: 1, p: 3, backgroundColor: "#f4f6f8" }}>
         <Box sx={{ my: 4 }}>
