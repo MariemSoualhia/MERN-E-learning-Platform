@@ -10,20 +10,21 @@ import {
   Menu,
   Divider,
   message,
-  Upload,
   Avatar,
+  Checkbox,
 } from "antd";
 import { Container, Box } from "@mui/material";
-import { InfoCircleOutlined, UploadOutlined } from "@ant-design/icons";
+import { UploadOutlined } from "@ant-design/icons";
 import axios from "axios";
 import Sidebar from "../navbar/Sidebar";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 const Profile = () => {
   const [accountForm] = Form.useForm();
-  const [securityForm] = Form.useForm();
+  const [securityForm] = Form.useForm(); // Formulaire pour la section Sécurité
   const [userData, setUserData] = useState({});
+  const [selectedFile, setSelectedFile] = useState(null);
   const [selectedMenu, setSelectedMenu] = useState("account");
 
   useEffect(() => {
@@ -39,9 +40,6 @@ const Profile = () => {
   const handleAccountFinish = async (values) => {
     try {
       const token = localStorage.getItem("token");
-      if (!userData.id) {
-        throw new Error("User ID is undefined");
-      }
       const response = await axios.put(
         `http://localhost:5000/api/users/profile/${userData.id}`,
         values,
@@ -61,12 +59,50 @@ const Profile = () => {
     }
   };
 
+  const handleFileChange = (event) => {
+    setSelectedFile(event.target.files[0]);
+  };
+
+  const handleUploadProfilePicture = async () => {
+    if (!selectedFile) {
+      message.error("No file selected.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("photoProfil", selectedFile);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.put(
+        `http://localhost:5000/api/users/profile/photo/${userData.id}`,
+        formData,
+        {
+          headers: {
+            "x-auth-token": token,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      localStorage.setItem("currentuser", JSON.stringify(response.data.user));
+      setUserData(response.data.user);
+      message.success("Profile photo updated successfully");
+    } catch (error) {
+      if (error.response) {
+        message.error(
+          error.response.data.message || "Failed to update profile photo"
+        );
+      } else if (error.request) {
+        message.error("Server is not responding. Please check your backend.");
+      } else {
+        message.error("An error occurred while sending the request.");
+      }
+    }
+  };
+
   const handleSecurityFinish = async (values) => {
     try {
       const token = localStorage.getItem("token");
-      if (!userData.id) {
-        throw new Error("User ID is undefined");
-      }
       await axios.put(
         `http://localhost:5000/api/users/profile/change-password/${userData.id}`,
         values,
@@ -86,35 +122,6 @@ const Profile = () => {
 
   const handleMenuClick = (e) => {
     setSelectedMenu(e.key);
-  };
-
-  const handleUpload = async (info) => {
-    const formData = new FormData();
-    formData.append("photo", info.file.originFileObj);
-
-    try {
-      const token = localStorage.getItem("token");
-      if (!userData.id) {
-        throw new Error("User ID is undefined");
-      }
-      const response = await axios.put(
-        `http://localhost:5000/api/users/profile/photo/${userData.id}`,
-        formData,
-        {
-          headers: {
-            "x-auth-token": token,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      localStorage.setItem("currentuser", JSON.stringify(response.data.user));
-      setUserData(response.data.user);
-      message.success("Profile photo updated successfully");
-    } catch (error) {
-      message.error(
-        error.response?.data?.message || "Failed to update profile photo"
-      );
-    }
   };
 
   return (
@@ -171,6 +178,20 @@ const Profile = () => {
                       <Input placeholder="Nom" />
                     </Form.Item>
                   </Col>
+                  <Col span={8}>
+                    <Form.Item
+                      name="phoneNumber"
+                      label="Téléphone"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Veuillez entrer votre numéro de téléphone!",
+                        },
+                      ]}
+                    >
+                      <Input placeholder="Téléphone" />
+                    </Form.Item>
+                  </Col>
                   {userData.role === "formateur" && (
                     <Col span={8}>
                       <Form.Item
@@ -196,41 +217,94 @@ const Profile = () => {
                     </Col>
                   )}
                 </Row>
+                <Row gutter={16}>
+                  <Col span={24}>
+                    <Form.Item
+                      name="bio"
+                      label="Biographie"
+                      rules={[
+                        {
+                          max: 500,
+                          message:
+                            "La biographie ne peut pas dépasser 500 caractères.",
+                        },
+                      ]}
+                    >
+                      <Input.TextArea placeholder="Parlez un peu de vous" />
+                    </Form.Item>
+                  </Col>
+                </Row>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item name={["address", "street"]} label="Rue">
+                      <Input placeholder="Rue" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item name={["address", "city"]} label="Ville">
+                      <Input placeholder="Ville" />
+                    </Form.Item>
+                  </Col>
+                </Row>
+                <Row gutter={16}>
+                  <Col span={8}>
+                    <Form.Item name={["address", "state"]} label="État">
+                      <Input placeholder="État" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={8}>
+                    <Form.Item
+                      name={["address", "zipCode"]}
+                      label="Code postal"
+                    >
+                      <Input placeholder="Code postal" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={8}>
+                    <Form.Item name={["address", "country"]} label="Pays">
+                      <Input placeholder="Pays" />
+                    </Form.Item>
+                  </Col>
+                </Row>
                 <Divider />
                 <Title level={4} style={{ color: "#333" }}>
-                  Communication et autres informations
+                  Liens sociaux
                 </Title>
                 <Row gutter={16}>
                   <Col span={12}>
                     <Form.Item
-                      name="email"
-                      label="Email"
-                      rules={[
-                        {
-                          required: true,
-                          message: "Veuillez entrer votre email!",
-                          type: "email",
-                        },
-                      ]}
+                      name={["socialLinks", "facebook"]}
+                      label="Facebook"
                     >
-                      <Input placeholder="Email" disabled />
+                      <Input placeholder="Lien Facebook" />
                     </Form.Item>
                   </Col>
                   <Col span={12}>
                     <Form.Item
-                      name="phone"
-                      label="Téléphone"
-                      rules={[
-                        {
-                          required: true,
-                          message: "Veuillez entrer votre numéro de téléphone!",
-                        },
-                      ]}
+                      name={["socialLinks", "twitter"]}
+                      label="Twitter"
                     >
-                      <Input placeholder="Téléphone" />
+                      <Input placeholder="Lien Twitter" />
                     </Form.Item>
                   </Col>
                 </Row>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name={["socialLinks", "linkedIn"]}
+                      label="LinkedIn"
+                    >
+                      <Input placeholder="Lien LinkedIn" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item name={["socialLinks", "github"]} label="GitHub">
+                      <Input placeholder="Lien GitHub" />
+                    </Form.Item>
+                  </Col>
+                </Row>
+                <Divider />
+
                 <Form.Item>
                   <Button
                     type="primary"
@@ -254,20 +328,40 @@ const Profile = () => {
                   }}
                 >
                   <Avatar
-                    src={userData.photoProfil}
+                    src={`http://localhost:5000/static-images/${userData.photoProfil}`}
                     size={100}
                     style={{ marginBottom: "10px" }}
                   />
-                  <Upload
-                    showUploadList={false}
-                    beforeUpload={() => false}
-                    onChange={handleUpload}
+
+                  <input
+                    type="file"
+                    hidden
+                    onChange={handleFileChange}
+                    name="photo"
+                    id="upload-profile-picture"
+                  />
+                  <Button
+                    icon={<UploadOutlined />}
+                    onClick={() =>
+                      document.getElementById("upload-profile-picture").click()
+                    }
                   >
-                    <Button icon={<UploadOutlined />}>
-                      Changer la photo de profil
-                    </Button>
-                  </Upload>
+                    Changer la photo de profil
+                  </Button>
                 </div>
+                {selectedFile && (
+                  <Button
+                    type="primary"
+                    onClick={handleUploadProfilePicture}
+                    style={{
+                      backgroundColor: "#722ed1",
+                      borderColor: "#722ed1",
+                      marginTop: "10px",
+                    }}
+                  >
+                    Upload Profile Picture
+                  </Button>
+                )}
               </Form>
             )}
             {selectedMenu === "security" && (

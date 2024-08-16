@@ -8,8 +8,15 @@ import {
   Input,
   Select,
   Popconfirm,
+  Upload,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  UploadOutlined,
+  ReloadOutlined,
+} from "@ant-design/icons";
 import { Container, Box, Typography } from "@mui/material";
 import axios from "axios";
 import Sidebar from "../navbar/Sidebar";
@@ -18,9 +25,12 @@ const { Option } = Select;
 
 const ManageFormateurs = () => {
   const [formateurs, setFormateurs] = useState([]);
+  const [filteredFormateurs, setFilteredFormateurs] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [selectedFormateur, setSelectedFormateur] = useState(null);
+  const [filters, setFilters] = useState({ name: "" });
+  const [file, setFile] = useState(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -37,10 +47,15 @@ const ManageFormateurs = () => {
         },
       });
       setFormateurs(response.data);
+      setFilteredFormateurs(response.data); // Set filtered data initially
     } catch (error) {
       message.error("Erreur lors de la récupération des formateurs");
       console.error(error);
     }
+  };
+
+  const handleFileChange = ({ file }) => {
+    setFile(file);
   };
 
   const handleAdd = () => {
@@ -53,6 +68,15 @@ const ManageFormateurs = () => {
     setSelectedFormateur(formateur);
     setIsEdit(true);
     setIsModalVisible(true);
+    form.setFieldsValue({
+      name: formateur.name,
+      email: formateur.email,
+      phoneNumber: formateur.phoneNumber,
+      address: formateur.address,
+      bio: formateur.bio,
+      specialty: formateur.specialty,
+      socialLinks: formateur.socialLinks,
+    });
   };
 
   const handleDelete = async (id) => {
@@ -64,6 +88,9 @@ const ManageFormateurs = () => {
         },
       });
       setFormateurs(formateurs.filter((formateur) => formateur._id !== id));
+      setFilteredFormateurs(
+        filteredFormateurs.filter((formateur) => formateur._id !== id)
+      );
       message.success("Formateur supprimé avec succès");
     } catch (error) {
       message.error("Erreur lors de la suppression du formateur");
@@ -73,15 +100,26 @@ const ManageFormateurs = () => {
 
   const handleFinish = async (values) => {
     const token = localStorage.getItem("token");
+    const formData = new FormData();
+
+    Object.keys(values).forEach((key) => {
+      formData.append(key, values[key]);
+    });
+
+    if (file) {
+      formData.append("photoProfil", file.originFileObj);
+    }
+
     const url = isEdit
       ? `http://localhost:5000/api/users/formateurs/${selectedFormateur._id}`
       : "http://localhost:5000/api/users";
     const method = isEdit ? "put" : "post";
 
     try {
-      await axios[method](url, values, {
+      await axios[method](url, formData, {
         headers: {
           "x-auth-token": token,
+          "Content-Type": "multipart/form-data",
         },
       });
       message.success(
@@ -97,6 +135,23 @@ const ManageFormateurs = () => {
     }
   };
 
+  const handleFilterChange = (e) => {
+    const { value } = e.target;
+    setFilters({ name: value });
+
+    const newFilteredFormateurs = formateurs.filter((formateur) =>
+      formateur.name.toLowerCase().includes(value.toLowerCase())
+    );
+
+    setFilteredFormateurs(newFilteredFormateurs);
+  };
+
+  const handleRefresh = () => {
+    setFilters({ name: "" });
+    form.resetFields();
+    setFilteredFormateurs(formateurs);
+  };
+
   const columns = [
     {
       title: "Nom",
@@ -109,9 +164,44 @@ const ManageFormateurs = () => {
       key: "email",
     },
     {
+      title: "Téléphone",
+      dataIndex: "phoneNumber",
+      key: "phoneNumber",
+    },
+    {
+      title: "Adresse",
+      dataIndex: ["address", "street"],
+      key: "address",
+      render: (text, record) =>
+        record.address
+          ? `${record.address.street}, ${record.address.city}, ${record.address.state}`
+          : "N/A",
+    },
+    {
       title: "Spécialité",
       dataIndex: "specialty",
       key: "specialty",
+    },
+    {
+      title: "Biographie",
+      dataIndex: "bio",
+      key: "bio",
+      render: (text) => (text ? text : "N/A"),
+    },
+    {
+      title: "Photo de Profil",
+      dataIndex: "photoProfil",
+      key: "photoProfil",
+      render: (photoProfil) =>
+        photoProfil ? (
+          <img
+            src={`http://localhost:5000/static-images/${photoProfil}`}
+            alt="Profil"
+            style={{ width: 50 }}
+          />
+        ) : (
+          "N/A"
+        ),
     },
     {
       title: "Actions",
@@ -160,20 +250,50 @@ const ManageFormateurs = () => {
             Gestion des Formateurs
           </Typography>
 
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleAdd}
-            style={{
-              backgroundColor: "#1E3A8A",
-              borderColor: "#1E3A8A",
-              marginBottom: 20,
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: 2,
             }}
           >
-            Ajouter un formateur
-          </Button>
+            <Input
+              placeholder="Rechercher par nom"
+              value={filters.name}
+              onChange={handleFilterChange}
+              style={{ width: 300 }}
+            />
+            <Box>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={handleRefresh}
+                style={{
+                  backgroundColor: "#1E3A8A",
+                  color: "#FFFFFF",
+                  marginRight: 8,
+                }}
+              >
+                Refresh
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAdd}
+                style={{
+                  backgroundColor: "#1E3A8A",
+                  borderColor: "#1E3A8A",
+                }}
+              >
+                Ajouter un formateur
+              </Button>
+            </Box>
+          </Box>
 
-          <Table columns={columns} dataSource={formateurs} rowKey="_id" />
+          <Table
+            columns={columns}
+            dataSource={filteredFormateurs}
+            rowKey="_id"
+          />
         </Box>
 
         <Modal
@@ -199,20 +319,33 @@ const ManageFormateurs = () => {
             >
               <Input placeholder="Email" />
             </Form.Item>
-            {!isEdit && (
-              <Form.Item
-                name="password"
-                label="Mot de passe"
-                rules={[
-                  {
-                    required: true,
-                    message: "Veuillez entrer le mot de passe",
-                  },
-                ]}
-              >
-                <Input.Password placeholder="Mot de passe" />
-              </Form.Item>
-            )}
+            <Form.Item
+              name="phoneNumber"
+              label="Téléphone"
+              initialValue={selectedFormateur?.phoneNumber}
+              rules={[
+                {
+                  required: true,
+                  message: "Veuillez entrer le numéro de téléphone",
+                },
+              ]}
+            >
+              <Input placeholder="Téléphone" />
+            </Form.Item>
+            <Form.Item
+              name="address"
+              label="Adresse"
+              initialValue={selectedFormateur?.address}
+            >
+              <Input.TextArea placeholder="Adresse" />
+            </Form.Item>
+            <Form.Item
+              name="bio"
+              label="Biographie"
+              initialValue={selectedFormateur?.bio}
+            >
+              <Input.TextArea placeholder="Biographie" />
+            </Form.Item>
             <Form.Item
               name="specialty"
               label="Spécialité"
@@ -229,6 +362,20 @@ const ManageFormateurs = () => {
                 <Option value="réseau">Réseau</Option>
                 <Option value="gestion de projets">Gestion de projets</Option>
               </Select>
+            </Form.Item>
+            <Form.Item
+              name="photoProfil"
+              label="Photo de Profil"
+              valuePropName="fileList"
+              getValueFromEvent={handleFileChange}
+            >
+              <Upload
+                listType="picture"
+                beforeUpload={() => false}
+                onChange={handleFileChange}
+              >
+                <Button icon={<UploadOutlined />}>Upload Image</Button>
+              </Upload>
             </Form.Item>
             <Form.Item>
               <Button type="primary" htmlType="submit">

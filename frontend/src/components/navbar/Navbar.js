@@ -1,16 +1,23 @@
 import React from "react";
-import { AppBar, Toolbar, Typography, Button } from "@mui/material";
+import { AppBar, Toolbar, Typography, Button, Box } from "@mui/material";
 import { Link } from "react-router-dom";
 
 const Navbar = () => {
   return (
     <AppBar position="static">
       <Toolbar>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
-            MyApp
-          </Link>
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
+          <img
+            src="http://localhost:5000/static-images/e-learning.png"
+            alt="Logo"
+            style={{ width: 40, height: 40, marginRight: 10 }}
+          />
+          <Typography variant="h6">
+            <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
+              CNILearn
+            </Link>
+          </Typography>
+        </Box>
         <Button color="inherit" component={Link} to="/about">
           À propos
         </Button>

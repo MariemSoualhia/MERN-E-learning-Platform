@@ -1,5 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const path = require("path");
+const fs = require("fs");
 
 // Actions spécifiques aux administrateurs
 exports.adminAction = async (req, res) => {
@@ -162,9 +164,19 @@ exports.deleteApprenant = async (req, res) => {
   }
 };
 
-// Update user profile
+// Mise à jour du profil utilisateur
 exports.updateProfile = async (req, res) => {
-  const { name, phone, specialty } = req.body;
+  const {
+    name,
+    email,
+    phoneNumber,
+    specialty,
+    address,
+    bio,
+    socialLinks,
+    notifications,
+  } = req.body;
+
   const userId = req.params.id;
 
   try {
@@ -173,21 +185,104 @@ exports.updateProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Mise à jour des informations utilisateur
     user.name = name || user.name;
-    user.phone = phone || user.phone;
+    user.email = email || user.email;
+    user.phoneNumber = phoneNumber || user.phoneNumber;
+
     if (user.role === "formateur") {
       user.specialty = specialty || user.specialty;
     }
 
+    if (address) {
+      user.address.street = address.street || user.address.street;
+      user.address.city = address.city || user.address.city;
+      user.address.state = address.state || user.address.state;
+      user.address.zipCode = address.zipCode || user.address.zipCode;
+      user.address.country = address.country || user.address.country;
+    }
+
+    user.bio = bio || user.bio;
+
+    if (socialLinks) {
+      user.socialLinks.facebook =
+        socialLinks.facebook || user.socialLinks.facebook;
+      user.socialLinks.twitter =
+        socialLinks.twitter || user.socialLinks.twitter;
+      user.socialLinks.linkedIn =
+        socialLinks.linkedIn || user.socialLinks.linkedIn;
+      user.socialLinks.github = socialLinks.github || user.socialLinks.github;
+    }
+
+    if (notifications) {
+      user.notifications.email =
+        notifications.email ?? user.notifications.email;
+      user.notifications.sms = notifications.sms ?? user.notifications.sms;
+    }
+
     await user.save();
-    res.json({ user });
+    res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        photoProfil: user.photoProfil,
+        specialty: user.specialty,
+        phoneNumber: user.phoneNumber,
+        address: user.address,
+        bio: user.bio,
+        socialLinks: user.socialLinks,
+        notifications: user.notifications,
+        date: user.date,
+        lastLogin: user.lastLogin,
+        isActive: user.isActive,
+      },
+    });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send("Server error");
+    res.status(500).send("Erreur du serveur");
   }
 };
 
-// Change user password
+// Mise à jour de la photo de profil utilisateur
+// Contrôleur pour mettre à jour la photo de profil
+exports.updateProfilePicture = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    (user.photoProfil = req.file ? req.file.filename : ""), await user.save();
+
+    res.status(200).json({
+      message: "Profile picture updated successfully",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        photoProfil: user.photoProfil,
+        specialty: user.specialty,
+        phoneNumber: user.phoneNumber,
+        address: user.address,
+        bio: user.bio,
+        socialLinks: user.socialLinks,
+        notifications: user.notifications,
+        date: user.date,
+        lastLogin: user.lastLogin,
+        isActive: user.isActive,
+      },
+    });
+  } catch (err) {
+    res.status(400).send(err);
+  }
+};
+
+// Changement du mot de passe utilisateur
 exports.changePassword = async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   const userId = req.params.id;
@@ -210,29 +305,10 @@ exports.changePassword = async (req, res) => {
     res.json({ message: "Password changed successfully" });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send("Server error");
+    res.status(500).send("Erreur du serveur");
   }
 };
 
-// Update profile picture
-exports.updateProfilePicture = async (req, res) => {
-  const userId = req.params.id;
-
-  try {
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    user.photoProfil = req.file.path;
-
-    await user.save();
-    res.json({ user });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
-  }
-};
 // Récupérer les utilisateurs avec un filtrage par rôle
 exports.getUsersByRole = async (req, res) => {
   try {
@@ -243,10 +319,26 @@ exports.getUsersByRole = async (req, res) => {
       filter.role = role;
     }
 
-    const users = await User.find(filter).select("name email role specialty");
+    const users = await User.find(filter);
     res.json(users);
   } catch (error) {
     console.error(error.message);
     res.status(500).send("Erreur du serveur");
+  }
+};
+// Récupérer les détails d'un utilisateur par son ID
+exports.getUserById = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: "Server error" });
   }
 };

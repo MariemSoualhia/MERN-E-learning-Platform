@@ -30,6 +30,9 @@ import ApprenantFormations from "./components/Apprenant/ApprenantFormations";
 import FormationDetails from "./components/Apprenant/FormationDetails";
 import AdminPendingEnrollments from "./components/Admin/AdminPendingEnrollments";
 import MyEnrollments from "./components/Apprenant/MyEnrollments";
+import ResetPassword from "./components/Auth/ResetPassword";
+import EnrollmentManager from "./components/Admin/EnrollmentManager.";
+import Formations from "./components/home/Formations";
 const App = () => {
   return (
     <ThemeProvider theme={theme}>
@@ -42,6 +45,14 @@ const App = () => {
               element={
                 <PublicRoute>
                   <Home />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/formations"
+              element={
+                <PublicRoute>
+                  <Formations />
                 </PublicRoute>
               }
             />
@@ -66,6 +77,14 @@ const App = () => {
               element={
                 <PublicRoute>
                   <Login />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/reset-password/:token"
+              element={
+                <PublicRoute>
+                  <ResetPassword />
                 </PublicRoute>
               }
             />
@@ -188,6 +207,14 @@ const App = () => {
               element={
                 <PrivateRoute>
                   <ManageApprenants />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/enrollments"
+              element={
+                <PrivateRoute>
+                  <EnrollmentManager />
                 </PrivateRoute>
               }
             />

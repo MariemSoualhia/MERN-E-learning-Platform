@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Button, Card, message } from "antd";
 import axios from "axios";
-import { Box, Container, Typography } from "@mui/material";
+import { Box, Container, Typography, Grid } from "@mui/material";
 import Sidebar from "../navbar/Sidebar";
 import { useNavigate, useParams } from "react-router-dom";
+import theme from "../../theme";
 
 const ApprenantFormations = () => {
   const [formations, setFormations] = useState([]);
   const navigate = useNavigate();
-  const { specialty } = useParams(); // Récupère la spécialité depuis l'URL
+  const { specialty } = useParams();
 
   const fetchFormations = async () => {
     try {
@@ -24,64 +25,72 @@ const ApprenantFormations = () => {
 
   useEffect(() => {
     fetchFormations();
-  }, [specialty]); // Recharger les formations lorsque la spécialité change
+  }, [specialty]);
 
   const handleViewDetails = (formationId) => {
     navigate(`/apprenant/formation/${formationId}`);
   };
 
   return (
-    <Box sx={{ margin: "20px", display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ marginTop: "50px", display: "flex", minHeight: "100vh" }}>
       <Sidebar role="apprenant" />
-      <Container
-        sx={{
-          padding: 0,
-          margin: 0,
-          backgroundColor: "#F1F1F1",
-          width: "100%",
-        }}
-      >
-        <br /> <br />
-        <Typography variant="h2" component="h1" gutterBottom>
+      <Container sx={{ padding: 3, backgroundColor: "#F1F1F1", width: "100%" }}>
+        <Typography variant="h2" gutterBottom>
           Formations Disponibles ({specialty})
         </Typography>
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
+        <Grid container spacing={2}>
           {formations.map((formation) => (
-            <Card
-              key={formation._id}
-              cover={
-                <img
-                  alt={formation.title}
-                  src={`http://localhost:5000/static-images/${formation.image}`}
-                />
-              }
-              actions={[
-                <Button
-                  type="link"
-                  onClick={() => handleViewDetails(formation._id)}
-                >
-                  Voir Détails
-                </Button>,
-              ]}
-              style={{ width: 300 }}
-            >
-              <Card.Meta
-                title={formation.title}
-                description={`Statut: ${formation.status}`}
-              />
-              <p>{formation.description}</p>
-              <p>
-                Date de début:{" "}
-                {new Date(formation.dateDebut).toLocaleDateString()}
-              </p>
-              <p>
-                Date de fin: {new Date(formation.dateFin).toLocaleDateString()}
-              </p>
-              <p>Durée: {formation.duree} heures</p>
-              <p>Prix: {formation.prix} €</p>
-            </Card>
+            <Grid item xs={12} sm={6} md={4} key={formation._id}>
+              <Card
+                hoverable
+                cover={
+                  <img
+                    alt={formation.title}
+                    src={`http://localhost:5000/static-images/${formation.image}`}
+                    style={{ borderRadius: "8px" }}
+                  />
+                }
+                style={{ borderRadius: "8px", boxShadow: theme.shadows[2] }}
+              >
+                <Box sx={{ p: 2 }}>
+                  <Typography variant="h5" sx={{ mt: 2 }}>
+                    {formation.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {formation.description}
+                  </Typography>
+                  <Typography variant="body2">
+                    Date de début:{" "}
+                    {new Date(formation.dateDebut).toLocaleDateString()}
+                  </Typography>
+                  <Typography variant="body2">
+                    Date de fin:{" "}
+                    {new Date(formation.dateFin).toLocaleDateString()}
+                  </Typography>
+                  <Typography variant="body2">
+                    Durée: {formation.duree} heures
+                  </Typography>
+                  <Typography variant="body2">
+                    Prix: {formation.prix} €
+                  </Typography>
+                </Box>
+                <Box sx={{ textAlign: "center", mb: 2 }}>
+                  <Button
+                    type="primary"
+                    onClick={() => handleViewDetails(formation._id)}
+                    style={{
+                      backgroundColor: theme.palette.primary.main,
+                      borderColor: theme.palette.primary.main,
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    Voir Détails
+                  </Button>
+                </Box>
+              </Card>
+            </Grid>
           ))}
-        </Box>
+        </Grid>
       </Container>
     </Box>
   );

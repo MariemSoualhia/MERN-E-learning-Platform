@@ -1,54 +1,60 @@
 import React, { useState, useEffect } from "react";
 import {
-  Form,
-  Input,
+  TextField,
   Button,
-  Select,
   Typography,
-  message,
-  Upload,
-  DatePicker,
-  InputNumber,
-} from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+  Box,
+  MenuItem,
+  InputAdornment,
+  IconButton,
+} from "@mui/material";
+import { UploadOutlined } from "@mui/icons-material";
 import axios from "axios";
 import dayjs from "dayjs";
-
-const { Title } = Typography;
-const { RangePicker } = DatePicker;
+import { LocalizationProvider, DateRangePicker } from "@mui/x-date-pickers-pro";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { message } from "antd";
 
 const EditFormationForm = ({ formation, onClose, onUpdate }) => {
-  const [form] = Form.useForm();
+  const [title, setTitle] = useState(formation.title || "");
+  const [description, setDescription] = useState(formation.description || "");
+  const [dateRange, setDateRange] = useState([
+    dayjs(formation.dateDebut),
+    dayjs(formation.dateFin),
+  ]);
+  const [duree, setDuree] = useState(formation.duree || "");
+  const [prix, setPrix] = useState(formation.prix || "");
+  const [specialty, setSpecialty] = useState(formation.specialty || "");
+  const [meetLink, setMeetLink] = useState(formation.meetLink || "");
   const [file, setFile] = useState(null);
 
   useEffect(() => {
-    form.resetFields();
     setFile(null); // Clear the file input when formation changes
   }, [formation]);
 
-  const handleFileChange = ({ file }) => {
-    setFile(file);
+  const handleFileChange = (event) => {
+    setFile(event.target.files[0]);
   };
 
-  const handleFinish = async (values) => {
-    const { dateRange, ...rest } = values;
+  const handleSubmit = async () => {
     const [dateDebut, dateFin] = dateRange;
 
     const formData = new FormData();
-    formData.append("title", rest.title);
-    formData.append("description", rest.description);
+    formData.append("title", title);
+    formData.append("description", description);
     formData.append("dateDebut", dateDebut);
     formData.append("dateFin", dateFin);
-    formData.append("duree", rest.duree);
-    formData.append("prix", rest.prix);
-    formData.append("specialty", rest.specialty);
+    formData.append("duree", duree);
+    formData.append("prix", prix);
+    formData.append("specialty", specialty);
+    formData.append("meetLink", meetLink);
     if (file) {
       formData.append("image", file);
     }
 
     try {
       const res = await axios.put(
-        `http://localhost:5000/api/formations/update/${formation._id}`,
+        `http://localhost:5000/api/formations/${formation._id}`,
         formData,
         {
           headers: {
@@ -57,100 +63,124 @@ const EditFormationForm = ({ formation, onClose, onUpdate }) => {
           },
         }
       );
-      message.success("Formation updated successfully");
+      message.success("Formation mise à jour avec succès");
       onUpdate(res.data);
     } catch (error) {
-      message.error("Failed to update formation");
+      message.error("Échec de la mise à jour de la formation");
     }
   };
 
   return (
-    <div>
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleFinish}
-        initialValues={{
-          title: formation.title,
-          description: formation.description,
-          dateRange: [dayjs(formation.dateDebut), dayjs(formation.dateFin)],
-          duree: formation.duree,
-          prix: formation.prix,
-          specialty: formation.specialty,
-        }}
-      >
-        <Form.Item
-          name="title"
-          label="Title"
-          rules={[{ required: true, message: "Please input the title!" }]}
-        >
-          <Input placeholder="Title" />
-        </Form.Item>
-        <Form.Item
-          name="description"
+    <Box sx={{ mt: 2, maxHeight: "70vh", overflowY: "auto" }}>
+      <Typography variant="h4" gutterBottom>
+        Modifier la formation
+      </Typography>
+      <Box component="form" noValidate autoComplete="off" sx={{ mt: 3 }}>
+        <TextField
+          fullWidth
+          label="Titre"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          margin="normal"
+          required
+        />
+        <TextField
+          fullWidth
           label="Description"
-          rules={[{ required: true, message: "Please input the description!" }]}
-        >
-          <Input.TextArea placeholder="Description" />
-        </Form.Item>
-        <Form.Item
-          name="dateRange"
-          label="Date de début et de fin"
-          rules={[
-            { required: true, message: "Veuillez sélectionner les dates" },
-          ]}
-        >
-          <RangePicker />
-        </Form.Item>
-        <Form.Item
-          name="duree"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          margin="normal"
+          multiline
+          rows={4}
+          required
+        />
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DateRangePicker
+            startText="Date de début"
+            endText="Date de fin"
+            value={dateRange}
+            onChange={(newValue) => setDateRange(newValue)}
+            renderInput={(startProps, endProps) => (
+              <>
+                <TextField {...startProps} fullWidth margin="normal" required />
+                <Box sx={{ mx: 2 }}> à </Box>
+                <TextField {...endProps} fullWidth margin="normal" required />
+              </>
+            )}
+          />
+        </LocalizationProvider>
+        <TextField
+          fullWidth
           label="Durée (heures)"
-          rules={[{ required: true, message: "Veuillez entrer la durée" }]}
-        >
-          <InputNumber min={1} placeholder="Durée (heures)" />
-        </Form.Item>
-        <Form.Item
-          name="prix"
+          value={duree}
+          onChange={(e) => setDuree(e.target.value)}
+          margin="normal"
+          type="number"
+          required
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">heures</InputAdornment>
+            ),
+          }}
+        />
+        <TextField
+          fullWidth
           label="Prix"
-          rules={[{ required: true, message: "Veuillez entrer le prix" }]}
+          value={prix}
+          onChange={(e) => setPrix(e.target.value)}
+          margin="normal"
+          type="number"
+          required
+          InputProps={{
+            startAdornment: <InputAdornment position="start">€</InputAdornment>,
+          }}
+        />
+        <TextField
+          fullWidth
+          select
+          label="Spécialité"
+          value={specialty}
+          onChange={(e) => setSpecialty(e.target.value)}
+          margin="normal"
+          required
         >
-          <InputNumber min={0} placeholder="Prix" />
-        </Form.Item>
-        <Form.Item
-          name="specialty"
-          label="Specialty"
-          rules={[{ required: true, message: "Please select the specialty!" }]}
+          <MenuItem value="dev">Dev</MenuItem>
+          <MenuItem value="réseau">Réseau</MenuItem>
+          <MenuItem value="gestion de projets">Gestion de projets</MenuItem>
+        </TextField>
+        <TextField
+          fullWidth
+          label="Lien Google Meet"
+          value={meetLink}
+          onChange={(e) => setMeetLink(e.target.value)}
+          margin="normal"
+          type="url"
+          placeholder="https://meet.google.com/..."
+        />
+        <Button
+          variant="outlined"
+          component="label"
+          startIcon={<UploadOutlined />}
+          sx={{ mt: 2 }}
         >
-          <Select placeholder="Select Specialty">
-            <Select.Option value="dev">Dev</Select.Option>
-            <Select.Option value="réseau">Réseau</Select.Option>
-            <Select.Option value="gestion de projets">
-              Gestion de projets
-            </Select.Option>
-          </Select>
-        </Form.Item>
-        <Form.Item
-          name="image"
-          label="Image"
-          valuePropName="fileList"
-          getValueFromEvent={handleFileChange}
+          Téléverser une image
+          <input type="file" hidden onChange={handleFileChange} />
+        </Button>
+        {file && (
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            {file.name}
+          </Typography>
+        )}
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{ mt: 3 }}
+          onClick={handleSubmit}
         >
-          <Upload
-            listType="picture"
-            beforeUpload={() => false}
-            onChange={handleFileChange}
-          >
-            <Button icon={<UploadOutlined />}>Téléverser une image</Button>
-          </Upload>
-          {file && <span>{file.name}</span>}
-        </Form.Item>
-        <Form.Item>
-          <Button type="primary" htmlType="submit">
-            Update
-          </Button>
-        </Form.Item>
-      </Form>
-    </div>
+          Mettre à jour
+        </Button>
+      </Box>
+    </Box>
   );
 };
 

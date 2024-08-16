@@ -1,188 +1,355 @@
 import React, { useEffect, useState } from "react";
-import { Container, Typography, Box } from "@mui/material";
+import { Container, Typography, Box, Grid, Paper } from "@mui/material";
 import Sidebar from "../navbar/Sidebar";
-import PendingFormations from "./PendingFormations";
-import { Table, Button, message, Badge, Modal, List } from "antd";
-import {
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  BellOutlined,
-} from "@ant-design/icons";
 import axios from "axios";
-import io from "socket.io-client";
-import { useNavigate } from "react-router-dom";
+import { makeStyles } from "@mui/styles";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+
+const useStyles = makeStyles((theme) => ({
+  dashboardContainer: {
+    padding: "20px",
+    backgroundColor: "#f5f7fa",
+    minHeight: "100vh",
+  },
+  card: {
+    padding: "20px",
+    borderRadius: "15px",
+    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+    backgroundColor: "#ffffff",
+    textAlign: "center",
+  },
+  title: {
+    marginBottom: "20px",
+    fontWeight: "bold",
+    color: "#34495e",
+    textAlign: "center",
+  },
+  statText: {
+    fontSize: "36px",
+    fontWeight: "600",
+    color: "#2c3e50",
+  },
+}));
+
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 const AdminDashboard = () => {
-  const [formations, setFormations] = useState([]);
-  const [notifications, setNotifications] = useState([]);
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const navigate = useNavigate();
+  const classes = useStyles();
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalFormations: 0,
+    totalEnrollments: 0,
+    totalAdmins: 0,
+    totalFormateurs: 0,
+    totalApprenants: 0,
+    formationStatusCounts: [],
+    specialtyCounts: [],
+    enrollmentStatusCounts: [],
+    apprenantsByFormation: [],
+    apprenantsByFormateur: [],
+  });
+  const [topFormations, setTopFormations] = useState([]);
+
   useEffect(() => {
-    const fetchFormations = async () => {
-      const token = localStorage.getItem("token");
-
+    const fetchStats = async () => {
       try {
+        const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost:5000/api/formations/pending",
+          "http://localhost:5000/api/formations/dashboard-stats",
           {
             headers: {
               "x-auth-token": token,
             },
           }
         );
-        setFormations(response.data);
+        setStats(response.data);
       } catch (error) {
-        message.error("Erreur lors de la récupération des formations");
-        console.error(error);
+        console.error("Failed to fetch statistics:", error);
       }
     };
 
-    const fetchNotifications = async () => {
-      const token = localStorage.getItem("token");
-
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/api/formations/notifications",
-          {
-            headers: {
-              "x-auth-token": token,
-            },
-          }
-        );
-        setNotifications(response.data);
-        console.log(response.data);
-        setNotificationCount(response.data.length);
-      } catch (error) {
-        message.error("Erreur lors de la récupération des notifications");
-        console.error(error);
-      }
-    };
-
-    fetchFormations();
-    fetchNotifications();
-
-    const socket = io("http://localhost:5000");
-    socket.on("newFormation", (formation) => {
-      message.info("Une nouvelle formation a été ajoutée !");
-      setFormations((prevFormations) => [...prevFormations, formation]);
-      setNotifications((prevNotifications) => [
-        ...prevNotifications,
-        { type: "newFormation", formation },
-      ]);
-      setNotificationCount((prevCount) => prevCount + 1);
-    });
-
-    socket.on("formationStatusUpdated", (formation) => {
-      message.info("Le statut d'une formation a été mis à jour !");
-      setNotifications((prevNotifications) => [
-        ...prevNotifications,
-        { type: "formationStatusUpdated", formation },
-      ]);
-      setNotificationCount((prevCount) => prevCount + 1);
-    });
-
-    return () => socket.disconnect();
+    fetchStats();
   }, []);
 
-  const handleUpdateStatus = async (id, status) => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `http://localhost:5000/api/formations/update-status/${id}`,
-        { status },
-        {
-          headers: {
-            "x-auth-token": token,
-          },
-        }
-      );
-      setFormations(formations.filter((formation) => formation._id !== id));
-      message.success("Formation mise à jour avec succès");
-    } catch (error) {
-      message.error("Erreur lors de la mise à jour de la formation");
-    }
-  };
+  useEffect(() => {
+    const fetchStats2 = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const topFormationsResponse = await axios.get(
+          "http://localhost:5000/api/formations/top-formations-by-enrollment",
+          {
+            headers: {
+              "x-auth-token": token,
+            },
+          }
+        );
+        setTopFormations(topFormationsResponse.data);
+      } catch (error) {
+        console.error("Failed to fetch statistics:", error);
+      }
+    };
 
-  const handleNotificationClick = async () => {
-    setIsModalVisible(true);
-    const token = localStorage.getItem("token");
+    fetchStats2();
+  }, []);
 
-    try {
-      await axios.put(
-        "http://localhost:5000/api/formations/notifications/mark-as-read",
-        {},
-        {
-          headers: {
-            "x-auth-token": token,
-          },
-        }
-      );
-      setNotificationCount(0);
-    } catch (error) {
-      message.error("Erreur lors de la mise à jour des notifications");
-      console.error(error);
-    }
-  };
+  const formationStatusData = stats.formationStatusCounts.map((item) => ({
+    name: item.status,
+    value: item.count,
+  }));
 
-  const handleModalClose = () => {
-    setIsModalVisible(false);
-  };
-  const handleNotificationItemClick = (notification) => {
-    if (notification.type === "newFormation") {
-      navigate("/admin/pending-formations");
-    }
-    setIsModalVisible(false);
-  };
+  const specialtyData = stats.specialtyCounts.map((item) => ({
+    name: item.specialty,
+    value: item.count,
+  }));
+
+  const enrollmentStatusData = stats.enrollmentStatusCounts.map((item) => ({
+    name: item.status,
+    value: item.count,
+  }));
+
+  const apprenantsByFormationData = stats.apprenantsByFormation.map((item) => ({
+    name: item.formationTitle,
+    value: item.count,
+  }));
+
+  const apprenantsByFormateurData = stats.apprenantsByFormateur.map((item) => ({
+    name: item.formateurName,
+    value: item.count,
+  }));
+
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ marginTop: "50px", display: "flex", minHeight: "100vh" }}>
       <Sidebar role="admin" />
-      <Container sx={{ flexGrow: 1, p: 3, backgroundColor: "#f4f6f8" }}>
-        <Box sx={{ my: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Tableau de bord Admin
-          </Typography>
-          <Typography>
-            Bienvenue sur votre tableau de bord, Admin. Gérez les utilisateurs,
-            les cours, et les inscriptions ici.
-          </Typography>
-          {/* <PendingFormations /> */}
-          <Badge count={notificationCount} showZero>
-            <BellOutlined
-              style={{ fontSize: "24px", cursor: "pointer" }}
-              onClick={handleNotificationClick}
-            />
-          </Badge>
+      <Container className={classes.dashboardContainer}>
+        <Typography variant="h2" className={classes.title}>
+          Tableau de bord Admin
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">Total des Utilisateurs</Typography>
+              <Typography className={classes.statText}>
+                {stats.totalUsers}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">Total des Formations</Typography>
+              <Typography className={classes.statText}>
+                {stats.totalFormations}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">Total des Inscriptions</Typography>
+              <Typography className={classes.statText}>
+                {stats.totalEnrollments}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">Total des Admins</Typography>
+              <Typography className={classes.statText}>
+                {stats.totalAdmins}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">Total des Formateurs</Typography>
+              <Typography className={classes.statText}>
+                {stats.totalFormateurs}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">Total des Apprenants</Typography>
+              <Typography className={classes.statText}>
+                {stats.totalApprenants}
+              </Typography>
+            </Paper>
+          </Grid>
 
-          <Modal
-            title="Notifications"
-            visible={isModalVisible}
-            onCancel={handleModalClose}
-            footer={null}
-          >
-            <List
-              dataSource={notifications}
-              renderItem={(notification) => (
-                <List.Item
-                  onClick={() => handleNotificationItemClick(notification)}
+          {/* Répartition des Formations par Statut and Spécialité on the same line */}
+          <Grid item xs={12} sm={6} md={6}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">
+                Répartition des Formations par Statut
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={formationStatusData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
+                  >
+                    {formationStatusData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={6}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">
+                Répartition des Formations par Spécialité
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={specialtyData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    fill="#82ca9d"
+                    dataKey="value"
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
+                  >
+                    {specialtyData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </Paper>
+          </Grid>
+
+          {/* Top 5 Formations and Statut des Inscriptions on the same line */}
+          <Grid item xs={12} sm={6} md={6}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">
+                Top 5 Formations par Nombre d'Inscriptions
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={topFormations.map((formation) => ({
+                    name: formation.formationTitle,
+                    value: formation.count,
+                  }))}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
                 >
-                  {notification.type === "newFormation" && (
-                    <div>
-                      Nouvelle formation ajoutée :{" "}
-                      {notification.formation.title}
-                    </div>
-                  )}
-                  {notification.type === "formationStatusUpdated" && (
-                    <div>
-                      Statut de la formation mis à jour :{" "}
-                      {notification.formation.title}
-                    </div>
-                  )}
-                </List.Item>
-              )}
-            />
-          </Modal>
-        </Box>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="value" fill="#FF8042" />
+                </BarChart>
+              </ResponsiveContainer>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={6}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">Statut des Inscriptions</Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={enrollmentStatusData}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="value" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </Paper>
+          </Grid>
+
+          {/* Nombre d'Apprenants par Formation and Nombre d'Apprenants par Formateur on the same line */}
+          <Grid item xs={12} sm={6} md={6}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">
+                Nombre d'Apprenants par Formation
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={apprenantsByFormationData}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="value" fill="#00C49F" />
+                </BarChart>
+              </ResponsiveContainer>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={6}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">
+                Nombre d'Apprenants par Formateur
+              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={apprenantsByFormateurData}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="value" fill="#FFBB28" />
+                </BarChart>
+              </ResponsiveContainer>
+            </Paper>
+          </Grid>
+        </Grid>
       </Container>
     </Box>
   );

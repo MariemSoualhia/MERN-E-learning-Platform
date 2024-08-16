@@ -8,7 +8,8 @@ const path = require("path");
 const fs = require("fs");
 const socket = require("../socket");
 const auth = require("../middleware/auth");
-
+const nodemailer = require("nodemailer");
+const mongoose = require("mongoose");
 // Configuration de Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -32,10 +33,37 @@ exports.addFormation = [
   auth,
   upload.single("image"),
   async (req, res) => {
-    const { title, description, dateDebut, dateFin, duree, prix, specialty } =
-      req.body;
+    const {
+      title,
+      description,
+      dateDebut,
+      dateFin,
+      duree,
+      prix,
+      specialty,
+      formateur,
+    } = req.body;
 
     try {
+      // Determine the formateur ID based on the user's role
+      let formateurId;
+      if (req.user.role === "admin") {
+        // If the user is an admin, use the formateur ID provided in the request body
+        if (!formateur) {
+          return res.status(400).json({
+            msg: "Formateur is required when adding a formation as an admin",
+          });
+        }
+        formateurId = formateur;
+      } else if (req.user.role === "formateur") {
+        // If the user is a formateur, assign themselves as the formateur
+        formateurId = req.user.id;
+      } else {
+        // If the user doesn't have the correct role, deny the request
+        return res.status(403).json({ msg: "Access denied" });
+      }
+
+      // Create the new formation
       const newFormation = new Formation({
         title,
         description,
@@ -45,7 +73,7 @@ exports.addFormation = [
         duree,
         prix,
         image: req.file ? req.file.filename : "",
-        formateur: req.user.id,
+        formateur: formateurId,
       });
 
       const formation = await newFormation.save();
@@ -66,16 +94,15 @@ exports.addFormation = [
       // Envoyer une notification via socket.io
       const io = socket.getIo();
       io.emit("newFormation", formation);
-      // Faites ceci :
+
+      // Envoyer une notification à chaque admin
       adminUsers.forEach((admin) => {
         io.to(admin._id.toString()).emit("newFormation", formation);
       });
 
-      // De même pour updateFormationStatus :
-      io.to(formation.formateur._id.toString()).emit(
-        "formationStatusUpdated",
-        formation
-      );
+      // Envoyer une notification au formateur
+      io.to(formateurId.toString()).emit("formationStatusUpdated", formation);
+
       res.status(201).json(formation);
     } catch (error) {
       console.error(error.message);
@@ -83,6 +110,7 @@ exports.addFormation = [
     }
   },
 ];
+
 // Récupérer les formations avec des filtres
 // Récupérer les formations avec des filtres
 exports.getFormations = async (req, res) => {
@@ -140,16 +168,24 @@ exports.markNotificationsAsRead = async (req, res) => {
 
 exports.deleteFormation = async (req, res) => {
   try {
+    // Find the formation by ID
     const formation = await Formation.findById(req.params.id);
 
+    // If the formation does not exist, return a 404 error
     if (!formation) {
       return res.status(404).json({ msg: "Formation not found" });
     }
 
-    await Formation.findByIdAndDelete(req.params.id); // Utilisation de findByIdAndDelete
+    // Delete all enrollments associated with the formation
+    await Enrollment.deleteMany({ formation: req.params.id });
 
-    res.json({ msg: "Formation supprimée" });
+    // Delete the formation
+    await Formation.findByIdAndDelete(req.params.id);
+
+    // Return a success message
+    res.json({ msg: "Formation and related enrollments deleted" });
   } catch (error) {
+    // Log the error and return a 500 status with an error message
     console.error(error.message);
     res.status(500).send("Server error");
   }
@@ -238,8 +274,16 @@ exports.updateFormation = [
   auth,
   upload.single("image"),
   async (req, res) => {
-    const { title, description, dateDebut, dateFin, duree, prix, specialty } =
-      req.body;
+    const {
+      title,
+      description,
+      dateDebut,
+      dateFin,
+      duree,
+      prix,
+      specialty,
+      meetLink,
+    } = req.body;
 
     try {
       let formation = await Formation.findById(req.params.id);
@@ -248,7 +292,11 @@ exports.updateFormation = [
         return res.status(404).json({ msg: "Formation not found" });
       }
 
-      if (formation.formateur.toString() !== req.user.id) {
+      // Check if the user is the formateur who owns the formation or an admin
+      if (
+        formation.formateur.toString() !== req.user.id &&
+        req.user.role !== "admin"
+      ) {
         return res.status(403).json({ msg: "User not authorized" });
       }
 
@@ -259,13 +307,12 @@ exports.updateFormation = [
       formation.dateFin = dateFin || formation.dateFin;
       formation.duree = duree || formation.duree;
       formation.prix = prix || formation.prix;
-      formation.image = req.file
-        ? `/uploads/${req.file.filename}`
-        : formation.image;
+      formation.meetLink = meetLink || formation.meetLink;
+      formation.image = req.file ? req.file.filename : formation.image;
 
       await formation.save();
 
-      // Envoyer une notification via socket.io
+      // Send a notification via socket.io
       const io = socket.getIo();
       io.emit("formationUpdated", formation);
 
@@ -446,26 +493,59 @@ exports.getEnrolledStudents = async (req, res) => {
     res.status(500).send("Erreur du serveur");
   }
 };
-// Récupérer les formations auxquelles un apprenant est inscrit
+
 exports.getFormationsForApprenant = async (req, res) => {
   try {
     const apprenantId = req.user.id;
+    const currentDate = new Date();
 
-    // Rechercher les inscriptions de l'apprenant et peupler les informations de la formation
+    // Find all enrollments for the apprenant
     const enrollments = await Enrollment.find({
       apprenant: apprenantId,
       status: "accepted",
-    }).populate("formation");
+    })
+      .populate({
+        path: "formation",
+        populate: {
+          path: "formateur",
+          select: "name email",
+        },
+      })
+      .exec();
 
-    // Extraire les formations des inscriptions
-    const formations = enrollments.map((enrollment) => enrollment.formation);
+    // Categorize formations into upcoming and completed, grouped by specialty
+    const formationsBySpecialty = enrollments.reduce(
+      (acc, enrollment) => {
+        const formation = enrollment.formation;
+        if (!formation) return acc;
 
-    res.status(200).json(formations);
+        const specialty = formation.specialty;
+
+        // Determine if the formation is upcoming or completed
+        if (formation.dateDebut > currentDate) {
+          if (!acc.upcoming[specialty]) {
+            acc.upcoming[specialty] = [];
+          }
+          acc.upcoming[specialty].push(formation);
+        } else if (formation.dateFin < currentDate) {
+          if (!acc.completed[specialty]) {
+            acc.completed[specialty] = [];
+          }
+          acc.completed[specialty].push(formation);
+        }
+
+        return acc;
+      },
+      { upcoming: {}, completed: {} }
+    );
+
+    res.status(200).json(formationsBySpecialty);
   } catch (error) {
-    console.error(error.message);
+    console.error(error);
     res.status(500).send("Erreur du serveur.");
   }
 };
+
 // Annuler une inscription pour une formation spécifique
 exports.cancelEnrollment = async (req, res) => {
   try {
@@ -485,6 +565,465 @@ exports.cancelEnrollment = async (req, res) => {
     res.status(200).json({ message: "Inscription annulée avec succès." });
   } catch (error) {
     console.error(error.message);
+    res.status(500).send("Erreur du serveur.");
+  }
+};
+
+exports.sendEmailToApprenants = async (req, res) => {
+  try {
+    const { formationId } = req.params;
+    const formation = await Formation.findById(formationId).populate(
+      "formateur"
+    );
+
+    if (!formation) {
+      return res.status(404).json({ message: "Formation non trouvée." });
+    }
+
+    const enrollments = await Enrollment.find({
+      formation: formationId,
+      status: "accepted",
+    }).populate("apprenant");
+
+    const apprenantsEmails = enrollments.map(
+      (enrollment) => enrollment.apprenant.email
+    );
+
+    if (apprenantsEmails.length === 0) {
+      return res.status(400).json({ message: "Aucun apprenant inscrit." });
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: "Gmail",
+      auth: {
+        user: process.env.EMAIL_USER, // Assurez-vous que ces variables sont configurées dans .env
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: apprenantsEmails.join(","),
+      subject: `Lien Google Meet pour la formation : ${formation.title}`,
+      html: `
+        <p>Bonjour,</p>
+        <p>Vous êtes inscrit à la formation <strong>${
+          formation.title
+        }</strong>, animée par ${formation.formateur.name}.</p>
+        <p>Voici le lien Google Meet pour rejoindre la formation :</p>
+        <p><a href="${formation.meetLink}">${formation.meetLink}</a></p>
+        <p>Informations supplémentaires :</p>
+        <ul>
+          <li>Date de début : ${new Date(
+            formation.dateDebut
+          ).toLocaleDateString()}</li>
+          <li>Date de fin : ${new Date(
+            formation.dateFin
+          ).toLocaleDateString()}</li>
+          <li>Durée : ${formation.duree} heures</li>
+         
+        </ul>
+        <p>Merci.</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: "Email envoyé avec succès." });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: "Erreur lors de l'envoi de l'email." });
+  }
+};
+// controllers/formationController.js
+
+exports.getTotalFormations = async (req, res) => {
+  try {
+    const totalFormations = await Formation.countDocuments({
+      formateur: req.user.id,
+    });
+    res.json({ totalFormations });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server error");
+  }
+};
+exports.getTodayNewEnrollments = async (req, res) => {
+  try {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    // Query for enrollments created today
+    const newEnrollments = await Enrollment.countDocuments({
+      createdAt: { $gte: startOfDay },
+      formation: {
+        $in: await Formation.find({ formateur: req.user.id }).select("_id"),
+      }, // Ensure this checks formations of the current formateur
+    });
+
+    res.status(200).json({ newEnrollments });
+  } catch (error) {
+    console.error("Error fetching today's new enrollments:", error.message);
+    res.status(500).send("Server error");
+  }
+};
+exports.getTotalEnrolledStudents = async (req, res) => {
+  try {
+    const formateurId = req.user.id;
+
+    const enrollments = await Enrollment.find({ status: "accepted" }).populate({
+      path: "formation",
+      match: { formateur: req.user.id },
+    });
+    console.log(enrollments.length);
+    const totalEnrolled = enrollments.length;
+    res.json({ totalEnrolled });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server error");
+  }
+};
+
+exports.getFormationStatusCounts = async (req, res) => {
+  try {
+    const activeCount = await Formation.countDocuments({
+      formateur: req.user.id,
+      status: "active",
+    });
+    const pendingCount = await Formation.countDocuments({
+      formateur: req.user.id,
+      status: "pending",
+    });
+    const rejectedCount = await Formation.countDocuments({
+      formateur: req.user.id,
+      status: "rejected",
+    });
+    res.json({ activeCount, pendingCount, rejectedCount });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server error");
+  }
+};
+exports.getDailyNewEnrollments = async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dailyNewEnrollments = await Enrollment.countDocuments({
+      createdAt: { $gte: today },
+      status: "accepted", // Assuming you only want to count accepted enrollments
+      formation: {
+        $in: await Formation.find({ formateur: req.user.id }).select("_id"),
+      }, // Only formations of the current formateur
+    });
+
+    res.status(200).json({ dailyNewEnrollments });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server error");
+  }
+};
+exports.getCompletedFormations = async (req, res) => {
+  try {
+    const today = new Date();
+
+    const completedFormations = await Formation.countDocuments({
+      formateur: req.user.id,
+      dateFin: { $lt: today }, // Check if the end date is before today
+    });
+
+    res.status(200).json({ completedFormations });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server error");
+  }
+};
+
+exports.getMostEnrolledFormation = async (req, res) => {
+  try {
+    const mostEnrolledFormation = await Enrollment.aggregate([
+      { $match: { status: "accepted" } }, // Filter by accepted enrollments
+      { $group: { _id: "$formation", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 1 },
+    ]);
+
+    if (mostEnrolledFormation.length > 0) {
+      const formation = await Formation.findById(mostEnrolledFormation[0]._id);
+      return res.status(200).json({ formationTitle: formation.title });
+    } else {
+      return res.status(200).json({ formationTitle: "No Enrollments" });
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server error");
+  }
+};
+exports.getAdminDashboardStats = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalFormations = await Formation.countDocuments();
+    const totalEnrollments = await Enrollment.countDocuments();
+    const totalAdmins = await User.countDocuments({ role: "admin" });
+    const totalFormateurs = await User.countDocuments({ role: "formateur" });
+    const totalApprenants = await User.countDocuments({ role: "apprenant" });
+
+    const formationStatusCounts = await Formation.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+      { $project: { status: "$_id", count: 1, _id: 0 } },
+    ]);
+
+    const specialtyCounts = await Formation.aggregate([
+      { $group: { _id: "$specialty", count: { $sum: 1 } } },
+      { $project: { specialty: "$_id", count: 1, _id: 0 } },
+    ]);
+
+    const enrollmentStatusCounts = await Enrollment.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+      { $project: { status: "$_id", count: 1, _id: 0 } },
+    ]);
+
+    // Calculate the number of apprenants by formation
+    const apprenantsByFormation = await Enrollment.aggregate([
+      { $match: { status: "accepted" } }, // Only count accepted enrollments
+      { $group: { _id: "$formation", count: { $sum: 1 } } },
+      {
+        $lookup: {
+          from: "formations",
+          localField: "_id",
+          foreignField: "_id",
+          as: "formation",
+        },
+      },
+      { $unwind: "$formation" },
+      { $project: { formationTitle: "$formation.title", count: 1, _id: 0 } },
+    ]);
+
+    // Calculate the number of apprenants by formateur
+    const apprenantsByFormateur = await Enrollment.aggregate([
+      { $match: { status: "accepted" } },
+      {
+        $lookup: {
+          from: "formations",
+          localField: "formation",
+          foreignField: "_id",
+          as: "formation",
+        },
+      },
+      { $unwind: "$formation" },
+      {
+        $group: {
+          _id: "$formation.formateur",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "formateur",
+        },
+      },
+      { $unwind: "$formateur" },
+      { $project: { formateurName: "$formateur.name", count: 1, _id: 0 } },
+    ]);
+
+    res.json({
+      totalUsers,
+      totalFormations,
+      totalEnrollments,
+      totalAdmins,
+      totalFormateurs,
+      totalApprenants,
+      formationStatusCounts,
+      specialtyCounts,
+      enrollmentStatusCounts,
+      apprenantsByFormation, // New data to return
+      apprenantsByFormateur, // New data to return
+    });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server error");
+  }
+};
+// Assuming you have a function like this in your formationController.js
+exports.getTopFormationsByEnrollment = async (req, res) => {
+  try {
+    const topFormations = await Enrollment.aggregate([
+      { $match: { status: "accepted" } }, // Filter only accepted enrollments
+      { $group: { _id: "$formation", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 }, // Top 5 formations
+      {
+        $lookup: {
+          from: "formations", // Collection name
+          localField: "_id",
+          foreignField: "_id",
+          as: "formationDetails",
+        },
+      },
+      { $unwind: "$formationDetails" }, // Unwind the formation details
+      {
+        $project: {
+          formationTitle: "$formationDetails.title",
+          count: 1,
+        },
+      },
+    ]);
+
+    console.log(topFormations);
+    res.status(200).json(topFormations);
+  } catch (error) {
+    console.error("Error fetching top formations:", error.message);
+    res.status(500).send("Server error");
+  }
+};
+
+exports.getEnrollments = async (req, res) => {
+  try {
+    // Fetch all enrollments, populate apprenant and formation fields
+    const enrollments = await Enrollment.find()
+      .populate("apprenant", "name email") // Populate apprenant with name and email fields
+      .populate("formation", "title description dateDebut dateFin formateur"); // Populate formation with multiple fields
+
+    // Send the populated enrollments as a JSON response
+    res.json(enrollments);
+  } catch (error) {
+    // Log the error and send a 500 status code with an error message
+    console.error(error.message);
+    res.status(500).send("Erreur du serveur");
+  }
+};
+// Supprimer une inscription par ID
+exports.deleteEnrollment = async (req, res) => {
+  try {
+    const { enrollmentId } = req.params;
+
+    // Attempt to find and delete the enrollment by its ID
+    const deletedEnrollment = await Enrollment.findByIdAndDelete(enrollmentId);
+
+    // Check if the enrollment was found and deleted
+    if (!deletedEnrollment) {
+      return res.status(404).json({ message: "Inscription non trouvée." });
+    }
+
+    // Return a success message if the deletion was successful
+    res.status(200).json({ message: "Inscription supprimée avec succès." });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Erreur du serveur");
+  }
+};
+
+exports.getApprenantDashboardStats = async (req, res) => {
+  try {
+    const apprenantId = req.user.id;
+    const currentDate = new Date();
+
+    // Convert apprenantId to ObjectId using 'new' keyword
+    const objectIdApprenantId = new mongoose.Types.ObjectId(apprenantId);
+
+    // Get total formations the user is enrolled in
+    const totalFormations = await Enrollment.countDocuments({
+      apprenant: objectIdApprenantId,
+      status: "accepted",
+    });
+
+    // Get completed formations where the end date is in the past
+    const completedFormations = await Enrollment.countDocuments({
+      apprenant: objectIdApprenantId,
+      status: "accepted",
+    })
+      .populate({
+        path: "formation",
+        match: { dateFin: { $lt: currentDate } },
+      })
+      .exec();
+
+    // Get upcoming formations where the start date is in the future
+    const upcomingFormations = await Enrollment.find({
+      apprenant: objectIdApprenantId,
+      status: "accepted",
+    })
+      .populate({
+        path: "formation",
+        match: { dateDebut: { $gt: currentDate } },
+        select: "title dateDebut",
+      })
+      .exec();
+
+    // Filter out any enrollments that don't have populated formations
+    const filteredUpcomingFormations = upcomingFormations.filter(
+      (enrollment) => enrollment.formation !== null
+    );
+
+    // Aggregation for formations by month
+    const formationsByMonth = await Enrollment.aggregate([
+      {
+        $match: {
+          apprenant: objectIdApprenantId,
+          status: "accepted",
+        },
+      },
+      {
+        $lookup: {
+          from: "formations",
+          localField: "formation",
+          foreignField: "_id",
+          as: "formationDetails",
+        },
+      },
+      { $unwind: "$formationDetails" },
+      {
+        $group: {
+          _id: { month: { $month: "$formationDetails.dateDebut" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id.month": 1 } },
+    ]);
+
+    // Aggregation for formations by year
+    const formationsByYear = await Enrollment.aggregate([
+      {
+        $match: {
+          apprenant: objectIdApprenantId,
+          status: "accepted",
+        },
+      },
+      {
+        $lookup: {
+          from: "formations",
+          localField: "formation",
+          foreignField: "_id",
+          as: "formationDetails",
+        },
+      },
+      { $unwind: "$formationDetails" },
+      {
+        $group: {
+          _id: { year: { $year: "$formationDetails.dateDebut" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id.year": 1 } },
+    ]);
+
+    // Return the data
+    res.status(200).json({
+      totalFormations,
+      completedFormations,
+      upcomingFormations: filteredUpcomingFormations.map((enrollment) => ({
+        _id: enrollment.formation._id,
+        title: enrollment.formation.title,
+        dateDebut: enrollment.formation.dateDebut,
+      })),
+      formationsByMonth: formationsByMonth || [], // Ensure array is returned
+      formationsByYear: formationsByYear || [], // Ensure array is returned
+    });
+  } catch (error) {
+    console.error(error);
     res.status(500).send("Erreur du serveur.");
   }
 };

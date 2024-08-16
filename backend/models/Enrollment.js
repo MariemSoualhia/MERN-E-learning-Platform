@@ -17,6 +17,10 @@ const EnrollmentSchema = new mongoose.Schema({
     enum: ["pending", "accepted", "rejected"],
     default: "pending",
   },
+  progression: {
+    type: Number,
+    default: 0, // Progression en pourcentage, 0 à 100
+  },
   createdAt: {
     type: Date,
     default: Date.now,

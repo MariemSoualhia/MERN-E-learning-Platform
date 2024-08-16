@@ -11,6 +11,7 @@ import axios from "axios";
 import { useParams } from "react-router-dom";
 import Sidebar from "../navbar/Sidebar";
 import { message, Popconfirm } from "antd";
+import theme from "../../theme";
 
 const FormationDetails = () => {
   const { formationId } = useParams();
@@ -19,6 +20,7 @@ const FormationDetails = () => {
   const [user] = useState(() =>
     JSON.parse(localStorage.getItem("currentuser"))
   );
+
   useEffect(() => {
     const fetchFormationDetails = async () => {
       try {
@@ -57,7 +59,6 @@ const FormationDetails = () => {
       message.success("Demande d'inscription envoyée !");
     } catch (error) {
       if (error.response) {
-        // Si le serveur renvoie une erreur
         if (error.response.status === 400) {
           message.error(
             error.response.data.message ||
@@ -69,7 +70,6 @@ const FormationDetails = () => {
           );
         }
       } else {
-        // Pour d'autres types d'erreurs (réseau, etc.)
         message.error("Erreur lors de l'inscription. Veuillez réessayer.");
       }
       console.error("Erreur d'inscription:", error);
@@ -79,14 +79,16 @@ const FormationDetails = () => {
   if (!formation) return <Typography>Chargement...</Typography>;
 
   return (
-    <Box sx={{ margin: "20px", display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ marginTop: "30px", display: "flex", minHeight: "100vh" }}>
       <Sidebar role="apprenant" />
-      <Container sx={{ flexGrow: 1, p: 3, backgroundColor: "#f4f6f8" }}>
+      <Container sx={{ padding: 3, backgroundColor: "#F1F1F1", width: "100%" }}>
         <Box sx={{ my: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
             Détails de la Formation
           </Typography>
-          <Card sx={{ mb: 4 }}>
+          <Card
+            sx={{ mb: 4, borderRadius: "8px", boxShadow: theme.shadows[2] }}
+          >
             <CardContent>
               <Typography variant="h5" gutterBottom>
                 {formation.title}
@@ -110,28 +112,29 @@ const FormationDetails = () => {
               <Typography variant="body1" gutterBottom>
                 Date de fin: {new Date(formation.dateFin).toLocaleDateString()}
               </Typography>
-              <Popconfirm
-                title="Êtes-vous sûr de vouloir vous inscrire à cette formation?"
-                onConfirm={handleInscription}
-                okText="Oui"
-                cancelText="Non"
-              >
-                <Button
-                  variant="contained"
-                  color="primary"
-                  style={{
-                    backgroundColor: "#1E3A8A",
-                    color: "#FFFFFF",
-                    marginTop: "20px",
-                  }}
+              <Box sx={{ textAlign: "center", mt: 2 }}>
+                <Popconfirm
+                  title="Êtes-vous sûr de vouloir vous inscrire à cette formation?"
+                  onConfirm={handleInscription}
+                  okText="Oui"
+                  cancelText="Non"
                 >
-                  S'inscrire à cette formation
-                </Button>
-              </Popconfirm>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    style={{
+                      backgroundColor: theme.palette.primary.main,
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    S'inscrire à cette formation
+                  </Button>
+                </Popconfirm>
+              </Box>
             </CardContent>
           </Card>
           {formateur && (
-            <Card>
+            <Card sx={{ borderRadius: "8px", boxShadow: theme.shadows[2] }}>
               <CardContent>
                 <Typography variant="h5" gutterBottom>
                   Détails du Formateur

@@ -12,9 +12,9 @@ import { UploadOutlined } from "@ant-design/icons";
 import { Box, Container, Typography } from "@mui/material";
 import Sidebar from "../navbar/Sidebar";
 import styled from "styled-components";
-import { ThemeProvider } from "@mui/material/styles";
-import theme from "../../theme";
 import axios from "axios";
+import theme from "../../theme";
+
 const { RangePicker } = DatePicker;
 
 const StyledForm = styled(Form)`
@@ -51,11 +51,14 @@ const StyledForm = styled(Form)`
 const AddFormation = () => {
   const [form] = Form.useForm();
   const [file, setFile] = useState(null);
-  const [user, setUser] = useState(() =>
-    JSON.parse(localStorage.getItem("currentuser"))
-  );
-  const handleFileChange = ({ file }) => {
-    setFile(file);
+  const user = JSON.parse(localStorage.getItem("currentuser"));
+
+  const handleFileChange = (info) => {
+    if (info.file.status === "removed") {
+      setFile(null);
+    } else {
+      setFile(info.file.originFileObj);
+    }
   };
 
   const handleFinish = async (values) => {
@@ -70,6 +73,7 @@ const AddFormation = () => {
     formData.append("duree", rest.duree);
     formData.append("prix", rest.prix);
     formData.append("specialty", user.specialty);
+
     if (file) {
       formData.append("image", file);
     }
@@ -82,8 +86,13 @@ const AddFormation = () => {
         },
       });
       message.success("Formation ajoutée avec succès");
+      form.resetFields(); // Reset the form after submission
+      setFile(null); // Clear the file state
     } catch (error) {
-      message.error("Échec de l'ajout de la formation");
+      console.error(error);
+      message.error(
+        error.response?.data?.message || "Échec de l'ajout de la formation"
+      );
     }
   };
 

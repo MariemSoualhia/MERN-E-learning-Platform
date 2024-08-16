@@ -17,20 +17,19 @@ import {
   Collapse,
 } from "@mui/material";
 import {
-  FaTachometerAlt,
-  FaUser,
-  FaFileAlt,
-  FaTasks,
-  FaSignOutAlt,
-  FaBell,
-  FaChevronRight,
-  FaChevronDown,
-  FaCode,
-  FaNetworkWired,
-  FaProjectDiagram,
-} from "react-icons/fa";
+  Dashboard as DashboardIcon,
+  People as PeopleIcon,
+  Assignment as AssignmentIcon,
+  ExitToApp as ExitToAppIcon,
+  Notifications as NotificationsIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  Code as CodeIcon,
+  Wifi as WifiIcon,
+  AssignmentTurnedIn as AssignmentTurnedInIcon,
+} from "@mui/icons-material"; // Material-UI icons
+import BeenhereIcon from "@mui/icons-material/Beenhere";
 import { Table, Button, message, Badge, Modal, List as AntList } from "antd";
-import { BellOutlined } from "@ant-design/icons";
 import axios from "axios";
 import io from "socket.io-client";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
@@ -85,7 +84,6 @@ const Sidebar = ({ role }) => {
 
     const socket = io("http://localhost:5000");
 
-    // Rejoindre une salle spécifique à l'utilisateur
     socket.emit("joinRoom", user._id, () => {
       console.log(`User joined room: ${user._id}`);
     });
@@ -120,13 +118,12 @@ const Sidebar = ({ role }) => {
       }
     });
 
-    // Gérer les notifications pour les nouvelles inscriptions
     socket.on("newEnrollment", (notification) => {
       if (user.role === "admin") {
         message.info(notification.message);
         setNotifications((prevNotifications) => [
           ...prevNotifications,
-          { type: "newEnrollment", ...notification }, // Utilisation de l'opérateur spread pour inclure toutes les propriétés de notification
+          { type: "newEnrollment", ...notification },
         ]);
         setNotificationCount((prevCount) => prevCount + 1);
       }
@@ -141,7 +138,7 @@ const Sidebar = ({ role }) => {
 
   const handleDrawerClose = () => {
     setOpen(false);
-    setOpenSpecialtyMenu(false); // Fermer le sous-menu lorsque la barre latérale se ferme
+    setOpenSpecialtyMenu(false);
   };
 
   const handleMenu = (event) => {
@@ -216,13 +213,15 @@ const Sidebar = ({ role }) => {
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Badge count={notificationCount} showZero>
-              <BellOutlined
+              <NotificationsIcon
                 style={{ fontSize: "24px", cursor: "pointer", color: "white" }}
                 onClick={handleNotificationClick}
               />
             </Badge>
             <IconButton color="inherit" onClick={handleMenu}>
-              <Avatar src={user.photoProfil} />
+              <Avatar
+                src={`http://localhost:5000/static-images/${user.photoProfil}`}
+              />
             </IconButton>
             <Menu
               id="menu-appbar"
@@ -243,7 +242,7 @@ const Sidebar = ({ role }) => {
                 Profile
               </MenuItem>
               <MenuItem onClick={handleLogout}>
-                <FaSignOutAlt style={{ marginRight: "8px" }} />
+                <ExitToAppIcon style={{ marginRight: "8px" }} />
                 Logout
               </MenuItem>
             </Menu>
@@ -262,8 +261,8 @@ const Sidebar = ({ role }) => {
           whiteSpace: "nowrap",
           boxSizing: "border-box",
           "& .MuiDrawer-paper": {
-            backgroundColor: "#1E3A8A", // Fond de la barre latérale
-            color: "#FFFFFF", // Le texte de la barre latérale sera toujours blanc
+            backgroundColor: "#1E3A8A",
+            color: "#FFFFFF",
           },
         }}
       >
@@ -281,7 +280,7 @@ const Sidebar = ({ role }) => {
             <>
               <ListItem button component={Link} to="/admin">
                 <ListItemIcon sx={{ color: "white" }}>
-                  <FaTachometerAlt />
+                  <DashboardIcon />
                 </ListItemIcon>
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
@@ -291,7 +290,7 @@ const Sidebar = ({ role }) => {
               </ListItem>
               <ListItem button component={Link} to="/admin/pending-formations">
                 <ListItemIcon sx={{ color: "white" }}>
-                  <FaTachometerAlt />
+                  <AssignmentIcon />
                 </ListItemIcon>
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
@@ -299,9 +298,23 @@ const Sidebar = ({ role }) => {
                   </Typography>
                 )}
               </ListItem>
+              <ListItem
+                button
+                component={Link}
+                to="/admin/pending-inscriptions"
+              >
+                <ListItemIcon sx={{ color: "white" }}>
+                  <AssignmentIcon />
+                </ListItemIcon>
+                {open && (
+                  <Typography variant="body1" sx={{ color: "white" }}>
+                    Inscriptions en attente
+                  </Typography>
+                )}
+              </ListItem>
               <ListItem button component={Link} to="/admin/formations">
                 <ListItemIcon sx={{ color: "white" }}>
-                  <FaUser />
+                  <AssignmentIcon />
                 </ListItemIcon>
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
@@ -311,7 +324,7 @@ const Sidebar = ({ role }) => {
               </ListItem>
               <ListItem button component={Link} to="/admin/formateurs">
                 <ListItemIcon sx={{ color: "white" }}>
-                  <FaUser />
+                  <PeopleIcon />
                 </ListItemIcon>
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
@@ -321,7 +334,7 @@ const Sidebar = ({ role }) => {
               </ListItem>
               <ListItem button component={Link} to="/admin/apprenants">
                 <ListItemIcon sx={{ color: "white" }}>
-                  <FaUser />
+                  <PeopleIcon />
                 </ListItemIcon>
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
@@ -329,13 +342,13 @@ const Sidebar = ({ role }) => {
                   </Typography>
                 )}
               </ListItem>
-              <ListItem button component={Link} to="/admin/courses">
+              <ListItem button component={Link} to="/admin/enrollments">
                 <ListItemIcon sx={{ color: "white" }}>
-                  <FaFileAlt />
+                  <BeenhereIcon />
                 </ListItemIcon>
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
-                    Gestion des cours
+                    Gestion des inscriptions
                   </Typography>
                 )}
               </ListItem>
@@ -345,7 +358,7 @@ const Sidebar = ({ role }) => {
             <>
               <ListItem button component={Link} to="/formateur">
                 <ListItemIcon sx={{ color: "white" }}>
-                  <FaTachometerAlt />
+                  <DashboardIcon />
                 </ListItemIcon>
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
@@ -355,7 +368,7 @@ const Sidebar = ({ role }) => {
               </ListItem>
               <ListItem button component={Link} to="/formateur/add-formation">
                 <ListItemIcon sx={{ color: "white" }}>
-                  <FaFileAlt />
+                  <AssignmentIcon />
                 </ListItemIcon>
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
@@ -365,7 +378,7 @@ const Sidebar = ({ role }) => {
               </ListItem>
               <ListItem button component={Link} to="/formateur/my-formations">
                 <ListItemIcon sx={{ color: "white" }}>
-                  <FaTasks />
+                  <AssignmentTurnedInIcon />
                 </ListItemIcon>
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
@@ -379,7 +392,7 @@ const Sidebar = ({ role }) => {
             <>
               <ListItem button component={Link} to="/apprenant">
                 <ListItemIcon sx={{ color: "white" }}>
-                  <FaTachometerAlt />
+                  <DashboardIcon />
                 </ListItemIcon>
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
@@ -389,7 +402,7 @@ const Sidebar = ({ role }) => {
               </ListItem>
               <ListItem button onClick={toggleSpecialtyMenu}>
                 <ListItemIcon sx={{ color: "white" }}>
-                  <FaFileAlt />
+                  <AssignmentIcon />
                 </ListItemIcon>
                 {open && (
                   <>
@@ -398,9 +411,9 @@ const Sidebar = ({ role }) => {
                     </Typography>
                     <ListItemIcon sx={{ color: "white" }}>
                       {openSpecialtyMenu ? (
-                        <FaChevronDown />
+                        <ExpandLessIcon />
                       ) : (
-                        <FaChevronRight />
+                        <ExpandMoreIcon />
                       )}
                     </ListItemIcon>
                   </>
@@ -412,10 +425,10 @@ const Sidebar = ({ role }) => {
                     button
                     component={Link}
                     to="/apprenant/formations/dev"
-                    sx={{ pl: 8, color: "white" }} // Indentation pour indiquer le sous-menu
+                    sx={{ pl: 8, color: "white" }}
                   >
                     <ListItemIcon sx={{ color: "white" }}>
-                      <FaCode /> {/* Icône pour Développement */}
+                      <CodeIcon />
                     </ListItemIcon>
                     <Typography variant="body2" sx={{ color: "white" }}>
                       Développement
@@ -425,10 +438,10 @@ const Sidebar = ({ role }) => {
                     button
                     component={Link}
                     to="/apprenant/formations/reseau"
-                    sx={{ pl: 8, color: "white" }} // Indentation pour indiquer le sous-menu
+                    sx={{ pl: 8, color: "white" }}
                   >
                     <ListItemIcon sx={{ color: "white" }}>
-                      <FaNetworkWired /> {/* Icône pour Réseau */}
+                      <WifiIcon />
                     </ListItemIcon>
                     <Typography variant="body2" sx={{ color: "white" }}>
                       Réseau
@@ -438,10 +451,10 @@ const Sidebar = ({ role }) => {
                     button
                     component={Link}
                     to="/apprenant/formations/gestion-de-projets"
-                    sx={{ pl: 8, color: "white" }} // Indentation pour indiquer le sous-menu
+                    sx={{ pl: 8, color: "white" }}
                   >
                     <ListItemIcon sx={{ color: "white" }}>
-                      <FaProjectDiagram /> {/* Icône pour Gestion de projets */}
+                      <AssignmentTurnedInIcon />
                     </ListItemIcon>
                     <Typography variant="body2" sx={{ color: "white" }}>
                       Gestion de projets
@@ -451,7 +464,7 @@ const Sidebar = ({ role }) => {
               </Collapse>
               <ListItem button component={Link} to="/apprenant/myEnrollments">
                 <ListItemIcon sx={{ color: "white" }}>
-                  <FaTachometerAlt />
+                  <AssignmentTurnedInIcon />
                 </ListItemIcon>
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
@@ -459,16 +472,16 @@ const Sidebar = ({ role }) => {
                   </Typography>
                 )}
               </ListItem>
-              <ListItem button onClick={handleLogout}>
+              {/* <ListItem button onClick={handleLogout}>
                 <ListItemIcon sx={{ color: "white" }}>
-                  <FaSignOutAlt />
+                  <ExitToAppIcon />
                 </ListItemIcon>
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
                     Déconnexion
                   </Typography>
                 )}
-              </ListItem>
+              </ListItem> */}
             </>
           )}
         </List>
@@ -513,7 +526,6 @@ const Sidebar = ({ role }) => {
               {notification.type == "newEnrollment" && (
                 <div>Notification : {notification.message}</div>
               )}
-              {/* Fallback au cas où le type n'est pas reconnu */}
               {![
                 "newFormation",
                 "newEnrollment",

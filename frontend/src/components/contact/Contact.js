@@ -7,6 +7,8 @@ import {
   Box,
   Grid,
   Paper,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 
@@ -27,11 +29,30 @@ const Contact = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [open, setOpen] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!name || !email || !message) {
+      alert("Veuillez remplir tous les champs du formulaire.");
+      return;
+    }
+
     // Handle form submission logic
     console.log("Form submitted:", { name, email, message });
+
+    // Clear the form
+    setName("");
+    setEmail("");
+    setMessage("");
+
+    // Show confirmation
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
   };
 
   return (
@@ -105,6 +126,12 @@ const Contact = () => {
           </form>
         </Paper>
       </Container>
+
+      <Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
+        <Alert onClose={handleClose} severity="success" sx={{ width: "100%" }}>
+          Votre message a été envoyé avec succès !
+        </Alert>
+      </Snackbar>
     </>
   );
 };

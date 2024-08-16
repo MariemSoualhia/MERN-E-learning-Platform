@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Card, Button, Modal, message } from "antd";
 import axios from "axios";
-import { Box, Container } from "@mui/material";
+import { Box, Container, Typography, Grid } from "@mui/material";
 import Sidebar from "../navbar/Sidebar";
+import theme from "../../theme";
 
 const MyEnrollments = () => {
-  const [formations, setFormations] = useState([]);
+  const [formationsBySpecialty, setFormationsBySpecialty] = useState({
+    upcoming: {},
+    completed: {},
+  });
   const [currentFormation, setCurrentFormation] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
@@ -19,7 +23,7 @@ const MyEnrollments = () => {
           headers: { "x-auth-token": token },
         }
       );
-      setFormations(res.data);
+      setFormationsBySpecialty(res.data);
     } catch (error) {
       console.error(error);
       message.error("Erreur lors de la récupération des formations.");
@@ -46,7 +50,7 @@ const MyEnrollments = () => {
         }
       );
       message.success("Inscription annulée avec succès.");
-      fetchFormations(); // Rafraîchir la liste des formations après annulation
+      fetchFormations();
     } catch (error) {
       console.error(error);
       message.error("Erreur lors de l'annulation de l'inscription.");
@@ -54,80 +58,224 @@ const MyEnrollments = () => {
   };
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ marginTop: "50px", display: "flex", minHeight: "100vh" }}>
       <Sidebar role="apprenant" />
-      <Container
-        sx={{
-          padding: 0,
-          margin: 0,
-          backgroundColor: "#F1F1F1",
-          width: "100%",
-        }}
-      >
-        <h2>Mes Formations</h2>
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
-          {formations.map((formation) => (
-            <Card
-              key={formation._id}
-              cover={
-                <img
-                  alt={formation.title}
-                  src={`http://localhost:5000/static-images/${formation.image}`}
-                />
-              }
-              actions={[
-                <Button type="link" onClick={() => showDetails(formation)}>
-                  Détails
-                </Button>,
-                <Button
-                  type="link"
-                  danger
-                  onClick={() => handleCancelEnrollment(formation._id)}
-                >
-                  Annuler Inscription
-                </Button>,
-              ]}
-              style={{ width: 300 }}
-            >
-              <Card.Meta
-                title={formation.title}
-                description={`Statut: ${formation.status}`}
-              />
-              <p>{formation.description}</p>
-              <p>
-                Date de début:{" "}
-                {new Date(formation.dateDebut).toLocaleDateString()}
-              </p>
-              <p>
-                Date de fin: {new Date(formation.dateFin).toLocaleDateString()}
-              </p>
-              <p>Durée: {formation.duree} heures</p>
-              <p>Prix: {formation.prix} €</p>
-            </Card>
-          ))}
-        </Box>
+      <Container sx={{ padding: 3, backgroundColor: "#F1F1F1", width: "100%" }}>
+        <Typography variant="h2" gutterBottom>
+          Mes Inscriptions
+        </Typography>
+
+        <Typography variant="h4" gutterBottom>
+          Formations à venir
+        </Typography>
+        {Object.keys(formationsBySpecialty.upcoming).map((specialty) => (
+          <Box key={specialty} sx={{ mb: 4 }}>
+            <Typography variant="h5">{specialty}</Typography>
+            <Grid container spacing={3}>
+              {formationsBySpecialty.upcoming[specialty].map((formation) => (
+                <Grid item xs={12} sm={6} md={4} key={formation._id}>
+                  <Card
+                    hoverable
+                    cover={
+                      <img
+                        alt={formation.title}
+                        src={`http://localhost:5000/static-images/${formation.image}`}
+                        style={{
+                          borderTopLeftRadius: "8px",
+                          borderTopRightRadius: "8px",
+                          height: "200px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    }
+                    style={{
+                      borderRadius: "8px",
+                      boxShadow: theme.shadows[3],
+                    }}
+                  >
+                    <Box sx={{ p: 2 }}>
+                      <Typography variant="h5" sx={{ mt: 2 }}>
+                        {formation.title}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mt: 1 }}
+                      >
+                        {formation.description}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        <strong>Date de début:</strong>{" "}
+                        {new Date(formation.dateDebut).toLocaleDateString()}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        <strong>Date de fin:</strong>{" "}
+                        {new Date(formation.dateFin).toLocaleDateString()}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        <strong>Durée:</strong> {formation.duree} heures
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        <strong>Prix:</strong> {formation.prix} €
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: "center", mb: 2 }}>
+                      <Button
+                        type="primary"
+                        onClick={() => showDetails(formation)}
+                        style={{
+                          backgroundColor: theme.palette.primary.main,
+                          borderColor: theme.palette.primary.main,
+                          color: "#FFFFFF",
+                          marginRight: "10px",
+                        }}
+                      >
+                        Détails
+                      </Button>
+                      <Button
+                        type="danger"
+                        onClick={() => handleCancelEnrollment(formation._id)}
+                        style={{
+                          backgroundColor: "#FF4D4F",
+                          color: "#FFFFFF",
+                        }}
+                      >
+                        Annuler Inscription
+                      </Button>
+                    </Box>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        ))}
+
+        <Typography variant="h4" gutterBottom>
+          Formations terminées
+        </Typography>
+        {Object.keys(formationsBySpecialty.completed).map((specialty) => (
+          <Box key={specialty} sx={{ mb: 4 }}>
+            <Typography variant="h5">{specialty}</Typography>
+            <Grid container spacing={3}>
+              {formationsBySpecialty.completed[specialty].map((formation) => (
+                <Grid item xs={12} sm={6} md={4} key={formation._id}>
+                  <Card
+                    hoverable
+                    cover={
+                      <img
+                        alt={formation.title}
+                        src={`http://localhost:5000/static-images/${formation.image}`}
+                        style={{
+                          borderTopLeftRadius: "8px",
+                          borderTopRightRadius: "8px",
+                          height: "200px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    }
+                    style={{
+                      borderRadius: "8px",
+                      boxShadow: theme.shadows[3],
+                    }}
+                  >
+                    <Box sx={{ p: 2 }}>
+                      <Typography variant="h5" sx={{ mt: 2 }}>
+                        {formation.title}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mt: 1 }}
+                      >
+                        {formation.description}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        <strong>Date de début:</strong>{" "}
+                        {new Date(formation.dateDebut).toLocaleDateString()}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        <strong>Date de fin:</strong>{" "}
+                        {new Date(formation.dateFin).toLocaleDateString()}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        <strong>Durée:</strong> {formation.duree} heures
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        <strong>Prix:</strong> {formation.prix} €
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: "center", mb: 2 }}>
+                      <Button
+                        type="primary"
+                        onClick={() => showDetails(formation)}
+                        style={{
+                          backgroundColor: theme.palette.primary.main,
+                          borderColor: theme.palette.primary.main,
+                          color: "#FFFFFF",
+                        }}
+                      >
+                        Détails
+                      </Button>
+                    </Box>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        ))}
+
         <Modal
-          title="Détails de la Formation"
-          visible={isModalVisible}
+          title={<Typography variant="h4">Détails de l'Inscription</Typography>}
+          open={isModalVisible}
           onCancel={() => setIsModalVisible(false)}
           footer={null}
+          centered
+          style={{ top: 20 }} // Optional: Adjust the modal position
         >
           {currentFormation && (
-            <div>
-              <h3>{currentFormation.title}</h3>
-              <p>{currentFormation.description}</p>
-              <p>
-                Date de début:{" "}
-                {new Date(currentFormation.dateDebut).toLocaleDateString()}
-              </p>
-              <p>
-                Date de fin:{" "}
-                {new Date(currentFormation.dateFin).toLocaleDateString()}
-              </p>
-              <p>Durée: {currentFormation.duree} heures</p>
-              <p>Prix: {currentFormation.prix} €</p>
-              <p>Formateur: {currentFormation.formateur.name}</p>
-            </div>
+            <Box sx={{ p: 2 }}>
+              <Typography variant="h5" gutterBottom>
+                {currentFormation.title}
+              </Typography>
+
+              <Typography
+                variant="body1"
+                gutterBottom
+                sx={{ color: "text.secondary" }}
+              >
+                {currentFormation.description}
+              </Typography>
+
+              <Box sx={{ my: 2 }}>
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{ fontWeight: 500 }}
+                >
+                  Détails de la Formation
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>Date de début:</strong>{" "}
+                  {new Date(currentFormation.dateDebut).toLocaleDateString()}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>Date de fin:</strong>{" "}
+                  {new Date(currentFormation.dateFin).toLocaleDateString()}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>Durée:</strong> {currentFormation.duree} heures
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>Prix:</strong> {currentFormation.prix} €
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>Formateur:</strong>{" "}
+                  {currentFormation.formateur
+                    ? currentFormation.formateur.name
+                    : "N/A"}
+                </Typography>
+              </Box>
+            </Box>
           )}
         </Modal>
       </Container>

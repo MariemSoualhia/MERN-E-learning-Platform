@@ -5,12 +5,15 @@ const path = require("path");
 const fs = require("fs");
 const http = require("http");
 const { Server } = require("socket.io");
+const bcrypt = require("bcryptjs");
 const connectDB = require("./db");
+const User = require("./models/User");
 const authRoutes = require("./routes/auth");
 const courseRoutes = require("./routes/courses");
 const userRoutes = require("./routes/user");
 const formationRoutes = require("./routes/formation");
 const socket = require("./socket");
+require("dotenv").config();
 
 const app = express();
 const server = http.createServer(app);
@@ -29,6 +32,36 @@ io.on("connection", (socket) => {
     console.log("Client disconnected");
   });
 });
+
+// Fonction pour créer un administrateur par défaut
+const createDefaultAdmin = async () => {
+  try {
+    const adminEmail = "admin@example.com";
+    const existingAdmin = await User.findOne({ email: adminEmail });
+
+    if (!existingAdmin) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash("admin", salt);
+
+      const admin = new User({
+        name: "Admin User",
+        email: adminEmail,
+        password: hashedPassword,
+        role: "admin",
+      });
+
+      await admin.save();
+      console.log("Default admin created");
+    } else {
+      console.log("Admin already exists");
+    }
+  } catch (error) {
+    console.error("Error creating default admin:", error.message);
+  }
+};
+
+// Appeler la fonction de création d'admin après la connexion à la base de données
+connectDB().then(createDefaultAdmin);
 
 // Routes
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

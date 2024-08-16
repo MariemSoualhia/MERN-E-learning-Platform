@@ -12,28 +12,66 @@ import {
   DatePicker,
   InputNumber,
   Upload,
+  Descriptions,
 } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   UploadOutlined,
+  InfoCircleOutlined,
+  ReloadOutlined, // Add Reload Icon
 } from "@ant-design/icons";
 import { Container, Box, Typography } from "@mui/material";
 import axios from "axios";
 import Sidebar from "../navbar/Sidebar";
+import styled from "styled-components";
 import moment from "moment";
-
+import theme from "../../theme";
 const { Option } = Select;
 const { RangePicker } = DatePicker;
+const StyledForm = styled(Form)`
+  .ant-form-item-label > label {
+    color: ${theme.palette.text.primary};
+  }
+
+  .ant-input,
+  .ant-input-number,
+  .ant-picker {
+    border-radius: ${theme.typography.button.borderRadius};
+  }
+
+  .ant-input:focus,
+  .ant-input-focused,
+  .ant-input-number:focus,
+  .ant-input-number-focused,
+  .ant-picker-focused {
+    border-color: ${theme.palette.primary.main};
+    box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2);
+  }
+
+  .ant-btn-primary {
+    background-color: ${theme.palette.primary.main};
+    border-color: ${theme.palette.primary.main};
+    &:hover {
+      background-color: ${theme.palette.primary.dark};
+      border-color: ${theme.palette.primary.dark};
+      box-shadow: ${theme.typography.button.boxShadow};
+    }
+  }
+`;
 
 const ManageFormations = () => {
   const [formations, setFormations] = useState([]);
   const [filteredFormations, setFilteredFormations] = useState([]);
   const [formateurs, setFormateurs] = useState([]); // List of formateurs
+  const [filteredFormateurs, setFilteredFormateurs] = useState([]); // List of formateurs filtered by specialty
+  const [selectedFormation, setSelectedFormation] = useState(null);
+  const [selectedFormateur, setSelectedFormateur] = useState(null); // State for selected formateur details
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const [selectedFormation, setSelectedFormation] = useState(null);
+  const [isFormateurDetailsVisible, setIsFormateurDetailsVisible] =
+    useState(false); // Modal visibility for formateur details
   const [filters, setFilters] = useState({ status: "", specialty: "" });
   const [file, setFile] = useState(null); // State to handle the image file
 
@@ -63,17 +101,34 @@ const ManageFormations = () => {
   const fetchFormateurs = async () => {
     const token = localStorage.getItem("token");
     try {
+      const response = await axios.get("http://localhost:5000/api/users", {
+        params: { role: "formateur" },
+        headers: {
+          "x-auth-token": token,
+        },
+      });
+      setFormateurs(response.data);
+    } catch (error) {
+      message.error("Erreur lors de la récupération des formateurs");
+      console.error(error);
+    }
+  };
+
+  const fetchFormateurDetails = async (formateurId) => {
+    const token = localStorage.getItem("token");
+    try {
       const response = await axios.get(
-        "http://localhost:5000/api/users/formateurs",
+        `http://localhost:5000/api/users/${formateurId}`,
         {
           headers: {
             "x-auth-token": token,
           },
         }
       );
-      setFormateurs(response.data);
+      setSelectedFormateur(response.data);
+      setIsFormateurDetailsVisible(true);
     } catch (error) {
-      message.error("Erreur lors de la récupération des formateurs");
+      message.error("Erreur lors de la récupération des détails du formateur");
       console.error(error);
     }
   };
@@ -93,6 +148,17 @@ const ManageFormations = () => {
     setFilteredFormations(newFilteredFormations);
   };
 
+  const handleSpecialtyChange = (value) => {
+    // Filter formateurs based on selected specialty
+    const filtered = formateurs.filter(
+      (formateur) => formateur.specialty === value
+    );
+    setFilteredFormateurs(filtered);
+
+    // Reset the formateur field in the form if the specialty changes
+    form.setFieldsValue({ formateur: null });
+  };
+
   const handleFileChange = ({ file }) => {
     setFile(file);
   };
@@ -101,12 +167,14 @@ const ManageFormations = () => {
     setSelectedFormation(null);
     setIsEdit(false);
     setIsModalVisible(true);
+    setFilteredFormateurs([]); // Clear filtered formateurs when adding a new formation
   };
 
   const handleEdit = (formation) => {
     setSelectedFormation(formation);
     setIsEdit(true);
     setIsModalVisible(true);
+    handleSpecialtyChange(formation.specialty); // Filter formateurs based on the specialty of the selected formation
     form.setFieldsValue({
       title: formation.title,
       description: formation.description,
@@ -125,6 +193,7 @@ const ManageFormations = () => {
       await axios.delete(`http://localhost:5000/api/formations/${id}`, {
         headers: {
           "x-auth-token": token,
+          "Content-Type": "multipart/form-data",
         },
       });
       setFormations(formations.filter((formation) => formation._id !== id));
@@ -153,10 +222,13 @@ const ManageFormations = () => {
     formData.append("specialty", rest.specialty);
     formData.append("status", rest.status);
     formData.append("formateur", rest.formateur);
+
+    // Check if file exists before appending
     if (file) {
       formData.append("image", file);
     }
 
+    // Determine URL and method based on edit mode
     const url = isEdit
       ? `http://localhost:5000/api/formations/${selectedFormation._id}`
       : "http://localhost:5000/api/formations/add";
@@ -169,17 +241,35 @@ const ManageFormations = () => {
           "Content-Type": "multipart/form-data",
         },
       });
+
       message.success(
         isEdit
           ? "Formation mise à jour avec succès"
           : "Formation ajoutée avec succès"
       );
-      fetchFormations();
-      setIsModalVisible(false);
+      fetchFormations(); // Refresh formations list
+      setIsModalVisible(false); // Close modal after success
     } catch (error) {
-      message.error("Erreur lors de l'ajout/mise à jour de la formation");
+      if (error.response && error.response.status === 403) {
+        message.error(
+          "Vous n'avez pas les droits nécessaires pour effectuer cette action."
+        );
+      } else {
+        message.error("Erreur lors de l'ajout/mise à jour de la formation");
+      }
       console.error(error);
     }
+  };
+
+  const handleRefresh = () => {
+    // Reset the filters state
+    setFilters({ status: "", specialty: "" });
+
+    // Reset the form values for the filter form
+    form.resetFields();
+
+    // Fetch the full list of formations again
+    fetchFormations();
   };
 
   const columns = [
@@ -239,6 +329,17 @@ const ManageFormations = () => {
               Supprimer
             </Button>
           </Popconfirm>
+          <Button
+            icon={<InfoCircleOutlined />}
+            onClick={() => fetchFormateurDetails(record.formateur._id)}
+            style={{
+              backgroundColor: "#4CAF50",
+              color: "#FFFFFF",
+              marginLeft: 8,
+            }}
+          >
+            Détails Formateur
+          </Button>
         </>
       ),
     },
@@ -260,47 +361,57 @@ const ManageFormations = () => {
               marginBottom: 2,
             }}
           >
+            <Form layout="inline" form={form}>
+              <Form.Item name="status" label="Filtrer par statut">
+                <Select
+                  placeholder="Sélectionnez le statut"
+                  onChange={(value) => handleFilterChange({ status: value })}
+                  allowClear
+                >
+                  <Option value="active">Active</Option>
+                  <Option value="pending">Pending</Option>
+                  <Option value="rejected">Rejected</Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name="specialty" label="Filtrer par spécialité">
+                <Select
+                  placeholder="Sélectionnez la spécialité"
+                  onChange={(value) => {
+                    handleSpecialtyChange(value);
+                    handleFilterChange({ specialty: value });
+                  }}
+                  allowClear
+                >
+                  <Option value="dev">Dev</Option>
+                  <Option value="réseau">Réseau</Option>
+                  <Option value="gestion de projets">Gestion de projets</Option>
+                </Select>
+              </Form.Item>
+            </Form>
             <Box>
-              <Form layout="inline" form={form}>
-                <Form.Item name="status" label="Filtrer par statut">
-                  <Select
-                    placeholder="Sélectionnez le statut"
-                    onChange={(value) => handleFilterChange({ status: value })}
-                    allowClear
-                  >
-                    <Option value="active">Active</Option>
-                    <Option value="pending">Pending</Option>
-                    <Option value="rejected">Rejected</Option>
-                  </Select>
-                </Form.Item>
-                <Form.Item name="specialty" label="Filtrer par spécialité">
-                  <Select
-                    placeholder="Sélectionnez la spécialité"
-                    onChange={(value) =>
-                      handleFilterChange({ specialty: value })
-                    }
-                    allowClear
-                  >
-                    <Option value="dev">Dev</Option>
-                    <Option value="réseau">Réseau</Option>
-                    <Option value="gestion de projets">
-                      Gestion de projets
-                    </Option>
-                  </Select>
-                </Form.Item>
-              </Form>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={handleRefresh}
+                style={{
+                  backgroundColor: "#1E3A8A",
+                  color: "#FFFFFF",
+                  marginRight: 8,
+                }}
+              >
+                Refresh
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAdd}
+                style={{
+                  backgroundColor: "#1E3A8A",
+                  borderColor: "#1E3A8A",
+                }}
+              >
+                Ajouter une formation
+              </Button>
             </Box>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleAdd}
-              style={{
-                backgroundColor: "#1E3A8A",
-                borderColor: "#1E3A8A",
-              }}
-            >
-              Ajouter une formation
-            </Button>
           </Box>
 
           <Table
@@ -316,7 +427,7 @@ const ManageFormations = () => {
           onCancel={() => setIsModalVisible(false)}
           footer={null}
         >
-          <Form form={form} layout="vertical" onFinish={handleFinish}>
+          <StyledForm form={form} layout="vertical" onFinish={handleFinish}>
             <Form.Item
               name="title"
               label="Titre"
@@ -346,7 +457,10 @@ const ManageFormations = () => {
                 },
               ]}
             >
-              <Select placeholder="Sélectionnez la spécialité">
+              <Select
+                placeholder="Sélectionnez la spécialité"
+                onChange={handleSpecialtyChange} // Filter formateurs based on selected specialty
+              >
                 <Option value="dev">Dev</Option>
                 <Option value="réseau">Réseau</Option>
                 <Option value="gestion de projets">Gestion de projets</Option>
@@ -364,7 +478,7 @@ const ManageFormations = () => {
               ]}
             >
               <Select placeholder="Sélectionnez le formateur">
-                {formateurs.map((formateur) => (
+                {filteredFormateurs.map((formateur) => (
                   <Option key={formateur._id} value={formateur._id}>
                     {formateur.name} {/* Assuming formateur has a name */}
                   </Option>
@@ -427,7 +541,60 @@ const ManageFormations = () => {
                 {isEdit ? "Mettre à jour" : "Ajouter"}
               </Button>
             </Form.Item>
-          </Form>
+          </StyledForm>
+        </Modal>
+
+        <Modal
+          title="Détails du Formateur"
+          visible={isFormateurDetailsVisible}
+          onCancel={() => setIsFormateurDetailsVisible(false)}
+          footer={null}
+          width={700} // Increase the width of the modal for better layout
+        >
+          {selectedFormateur ? (
+            <Descriptions bordered column={2}>
+              <Descriptions.Item label="Nom" span={1}>
+                {selectedFormateur.name}
+              </Descriptions.Item>
+              <Descriptions.Item label="Email" span={1}>
+                {selectedFormateur.email}
+              </Descriptions.Item>
+              <Descriptions.Item label="Spécialité" span={1}>
+                {selectedFormateur.specialty}
+              </Descriptions.Item>
+              <Descriptions.Item label="Téléphone" span={1}>
+                {selectedFormateur.phoneNumber || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Adresse" span={2}>
+                {selectedFormateur.address
+                  ? `${selectedFormateur.address.street}, ${selectedFormateur.address.city}, ${selectedFormateur.address.state}, ${selectedFormateur.address.zipCode}, ${selectedFormateur.address.country}`
+                  : "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Biographie" span={2}>
+                {selectedFormateur.bio || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Liens sociaux" span={2}>
+                {selectedFormateur.socialLinks
+                  ? Object.entries(selectedFormateur.socialLinks).map(
+                      ([platform, link]) => (
+                        <div key={platform}>
+                          {platform}:{" "}
+                          <a
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {link}
+                          </a>
+                        </div>
+                      )
+                    )
+                  : "N/A"}
+              </Descriptions.Item>
+            </Descriptions>
+          ) : (
+            <p>Aucun détail disponible pour ce formateur.</p>
+          )}
         </Modal>
       </Container>
     </Box>

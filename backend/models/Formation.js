@@ -44,6 +44,8 @@ const FormationSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  meetLink: { type: String }, // Nouveau champ pour le lien Google Meet
+
   dateCreation: {
     type: Date,
     default: Date.now,
