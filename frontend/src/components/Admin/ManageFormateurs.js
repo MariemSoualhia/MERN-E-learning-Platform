@@ -82,7 +82,7 @@ const ManageFormateurs = () => {
   const handleDelete = async (id) => {
     const token = localStorage.getItem("token");
     try {
-      await axios.delete(`http://localhost:5000/api/users/${id}`, {
+      await axios.delete(`http://localhost:5000/api/users/formateurs/${id}`, {
         headers: {
           "x-auth-token": token,
         },
@@ -100,38 +100,72 @@ const ManageFormateurs = () => {
 
   const handleFinish = async (values) => {
     const token = localStorage.getItem("token");
-    const formData = new FormData();
-
-    Object.keys(values).forEach((key) => {
-      formData.append(key, values[key]);
-    });
-
-    if (file) {
-      formData.append("photoProfil", file.originFileObj);
+    console.log(values);
+    // Vérification si le token existe
+    if (!token) {
+      message.error("Token non trouvé. Veuillez vous reconnecter.");
+      return;
     }
 
-    const url = isEdit
-      ? `http://localhost:5000/api/users/formateurs/${selectedFormateur._id}`
-      : "http://localhost:5000/api/users";
-    const method = isEdit ? "put" : "post";
+    // const formData = new FormData();
 
+    // // Ajouter toutes les valeurs du formulaire dans formData
+    // Object.keys(values).forEach((key) => {
+    //   formData.append(key, values[key]);
+    // });
+
+    // Vérification si un fichier est sélectionné avant de l'ajouter à formData
+    // if (file) {
+    //   formData.append("photoProfil", file.originFileObj);
+    // }
+
+    // Déterminer l'URL et la méthode en fonction de l'état de l'édition
+    let url;
+    let method;
     try {
-      await axios[method](url, formData, {
-        headers: {
-          "x-auth-token": token,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      if (isEdit && selectedFormateur && selectedFormateur._id) {
+        url = `http://localhost:5000/api/users/formateurs/${selectedFormateur._id}`;
+        method = "put";
+        const response = await axios.put(
+          `http://localhost:5000/api/users/formateurs/${selectedFormateur._id}`,
+          values,
+          {
+            headers: {
+              "x-auth-token": token,
+            },
+          }
+        );
+        console.log(response.data);
+      } else {
+        url = "http://localhost:5000/api/users";
+        method = "post";
+        const response = await axios.post(
+          "http://localhost:5000/api/users",
+          values,
+          {
+            headers: {
+              "x-auth-token": token,
+            },
+          }
+        );
+      }
+
+      // Appel API pour créer ou mettre à jour le formateur
+
+      // Message de succès selon l'opération
       message.success(
         isEdit
           ? "Formateur mis à jour avec succès"
           : "Formateur ajouté avec succès"
       );
+
+      // Rechargement des formateurs et fermeture du modal
       fetchFormateurs();
       setIsModalVisible(false);
     } catch (error) {
+      // Gestion des erreurs lors de l'appel API
+      console.error("Erreur lors de l'appel API:", error);
       message.error("Erreur lors de l'ajout/mise à jour du formateur");
-      console.error(error);
     }
   };
 
@@ -275,7 +309,7 @@ const ManageFormateurs = () => {
               >
                 Refresh
               </Button>
-              <Button
+              {/* <Button
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={handleAdd}
@@ -285,7 +319,7 @@ const ManageFormateurs = () => {
                 }}
               >
                 Ajouter un formateur
-              </Button>
+              </Button> */}
             </Box>
           </Box>
 
@@ -333,11 +367,39 @@ const ManageFormateurs = () => {
               <Input placeholder="Téléphone" />
             </Form.Item>
             <Form.Item
-              name="address"
-              label="Adresse"
-              initialValue={selectedFormateur?.address}
+              name={["address", "street"]}
+              label="Rue"
+              initialValue={selectedFormateur?.address?.street}
             >
-              <Input.TextArea placeholder="Adresse" />
+              <Input placeholder="Rue" />
+            </Form.Item>
+            <Form.Item
+              name={["address", "city"]}
+              label="Ville"
+              initialValue={selectedFormateur?.address?.city}
+            >
+              <Input placeholder="Ville" />
+            </Form.Item>
+            <Form.Item
+              name={["address", "state"]}
+              label="État"
+              initialValue={selectedFormateur?.address?.state}
+            >
+              <Input placeholder="État" />
+            </Form.Item>
+            <Form.Item
+              name={["address", "zipCode"]}
+              label="Code Postal"
+              initialValue={selectedFormateur?.address?.zipCode}
+            >
+              <Input placeholder="Code Postal" />
+            </Form.Item>
+            <Form.Item
+              name={["address", "country"]}
+              label="Pays"
+              initialValue={selectedFormateur?.address?.country}
+            >
+              <Input placeholder="Pays" />
             </Form.Item>
             <Form.Item
               name="bio"
@@ -363,7 +425,7 @@ const ManageFormateurs = () => {
                 <Option value="gestion de projets">Gestion de projets</Option>
               </Select>
             </Form.Item>
-            <Form.Item
+            {/* <Form.Item
               name="photoProfil"
               label="Photo de Profil"
               valuePropName="fileList"
@@ -376,7 +438,7 @@ const ManageFormateurs = () => {
               >
                 <Button icon={<UploadOutlined />}>Upload Image</Button>
               </Upload>
-            </Form.Item>
+            </Form.Item> */}
             <Form.Item>
               <Button type="primary" htmlType="submit">
                 {isEdit ? "Mettre à jour" : "Ajouter"}

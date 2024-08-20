@@ -1,5 +1,13 @@
 import React from "react";
-import { Container, Typography, Box, Grid, Paper, Avatar } from "@mui/material";
+import {
+  Container,
+  Typography,
+  Box,
+  Grid,
+  Paper,
+  Avatar,
+  Button,
+} from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { motion } from "framer-motion";
 
@@ -43,20 +51,15 @@ const teamMembers = [
     title: "CEO",
     image: "https://www.linkpicture.com/q/alice.jpg", // Remplacez par l'URL de l'image
   },
+
   {
-    name: "Soualhia Mariem",
+    name: "Mohamed Ali Saadaoui",
     title: "CTO",
-    image:
-      "http://localhost:5000/static-images/photoProfil-1723733877236-517119126.png", // Remplacez par l'URL de l'image
-  },
-  {
-    name: "Marie Curie",
-    title: "Lead Developer",
     image: "https://www.linkpicture.com/q/marie.jpg", // Remplacez par l'URL de l'image
   },
   {
-    name: "Paul Verlaine",
-    title: "Designer",
+    name: "Amri slim",
+    title: "Manager",
     image: "https://www.linkpicture.com/q/paul.jpg", // Remplacez par l'URL de l'image
   },
 ];
@@ -132,6 +135,38 @@ const About = () => {
           </Grid>
         </Container>
       </TeamSection>
+      <Box sx={{ bgcolor: "#1E3A8A", color: "#FFFFFF", py: 3 }}>
+        <Container>
+          <Typography variant="h6" component="h3" align="center">
+            Rejoignez CNILearn aujourd'hui et commencez votre parcours
+            d'apprentissage!
+          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              size="large"
+              href="/register"
+              sx={{
+                "&:hover": {
+                  transform: "scale(1.05)",
+                  transition: "transform 0.3s ease-in-out",
+                },
+              }}
+            >
+              Inscrivez-vous maintenant
+            </Button>
+          </Box>
+        </Container>
+      </Box>
+
+      <Box sx={{ bgcolor: "#0D1B47", color: "#FFFFFF", py: 2 }}>
+        <Container>
+          <Typography variant="body2" align="center">
+            © 2024 CNILearn. Tous droits réservés.
+          </Typography>
+        </Container>
+      </Box>
     </>
   );
 };

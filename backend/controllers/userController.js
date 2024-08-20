@@ -1,4 +1,6 @@
 const User = require("../models/User");
+const Formation = require("../models/Formation");
+const Enrollment = require("../models/Enrollment");
 const bcrypt = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
@@ -75,7 +77,9 @@ exports.createFormateur = async (req, res) => {
 };
 
 exports.updateFormateur = async (req, res) => {
-  const { name, email, specialty } = req.body;
+  const { name, email, phoneNumber, specialty, address, bio, socialLinks } =
+    req.body;
+  console.log(req.body);
   try {
     const user = await User.findById(req.params.id);
 
@@ -83,11 +87,43 @@ exports.updateFormateur = async (req, res) => {
       return res.status(404).json({ message: "Formateur non trouvé" });
     }
 
+    // Mise à jour des informations utilisateur
     user.name = name || user.name;
     user.email = email || user.email;
-    user.specialty = specialty || user.specialty;
+    user.phoneNumber = phoneNumber || user.phoneNumber;
 
+    // Mise à jour de la spécialité uniquement si l'utilisateur est un formateur
+    if (user.role === "formateur") {
+      user.specialty = specialty || user.specialty;
+    }
+
+    // Mise à jour de l'adresse si elle est présente dans la requête
+    if (address) {
+      user.address = {
+        street: address.street || user.address?.street || "",
+        city: address.city || user.address?.city || "",
+        state: address.state || user.address?.state || "",
+        zipCode: address.zipCode || user.address?.zipCode || "",
+        country: address.country || user.address?.country || "",
+      };
+    }
+
+    // Mise à jour de la bio si présente dans la requête
+    user.bio = bio || user.bio;
+
+    // Mise à jour des liens sociaux si présents dans la requête
+    if (socialLinks) {
+      user.socialLinks = {
+        facebook: socialLinks.facebook || user.socialLinks?.facebook || "",
+        twitter: socialLinks.twitter || user.socialLinks?.twitter || "",
+        linkedIn: socialLinks.linkedIn || user.socialLinks?.linkedIn || "",
+        github: socialLinks.github || user.socialLinks?.github || "",
+      };
+    }
+
+    // Sauvegarder les modifications
     await user.save();
+
     res.json(user);
   } catch (error) {
     console.error(error.message);
@@ -97,13 +133,23 @@ exports.updateFormateur = async (req, res) => {
 
 exports.deleteFormateur = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findByIdAndDelete(req.params.id);
 
     if (!user) {
       return res.status(404).json({ message: "Formateur non trouvé" });
     }
+    // Find all formations associated with this formateur
+    const formations = await Formation.find({ formateur: req.params.id });
 
-    await user.remove();
+    // Extract formation IDs
+    const formationIds = formations.map((formation) => formation._id);
+
+    // Delete all enrollments associated with these formations
+    await Enrollment.deleteMany({ formation: { $in: formationIds } });
+
+    // Delete all formations associated with this formateur
+    await Formation.deleteMany({ _id: { $in: formationIds } });
+
     res.json({ message: "Formateur supprimé" });
   } catch (error) {
     console.error(error.message);
@@ -129,16 +175,44 @@ exports.createApprenant = async (req, res) => {
 };
 
 exports.updateApprenant = async (req, res) => {
-  const { name, email } = req.body;
+  const { name, email, phoneNumber, specialty, address, bio, socialLinks } =
+    req.body;
+  console.log(req.body);
   try {
     const user = await User.findById(req.params.id);
 
     if (!user) {
-      return res.status(404).json({ message: "Apprenant non trouvé" });
+      return res.status(404).json({ message: "Formateur non trouvé" });
     }
 
+    // Mise à jour des informations utilisateur
     user.name = name || user.name;
     user.email = email || user.email;
+    user.phoneNumber = phoneNumber || user.phoneNumber;
+
+    // Mise à jour de l'adresse si elle est présente dans la requête
+    if (address) {
+      user.address = {
+        street: address.street || user.address?.street || "",
+        city: address.city || user.address?.city || "",
+        state: address.state || user.address?.state || "",
+        zipCode: address.zipCode || user.address?.zipCode || "",
+        country: address.country || user.address?.country || "",
+      };
+    }
+
+    // Mise à jour de la bio si présente dans la requête
+    user.bio = bio || user.bio;
+
+    // Mise à jour des liens sociaux si présents dans la requête
+    if (socialLinks) {
+      user.socialLinks = {
+        facebook: socialLinks.facebook || user.socialLinks?.facebook || "",
+        twitter: socialLinks.twitter || user.socialLinks?.twitter || "",
+        linkedIn: socialLinks.linkedIn || user.socialLinks?.linkedIn || "",
+        github: socialLinks.github || user.socialLinks?.github || "",
+      };
+    }
 
     await user.save();
     res.json(user);
@@ -150,13 +224,11 @@ exports.updateApprenant = async (req, res) => {
 
 exports.deleteApprenant = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-
+    const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
-      return res.status(404).json({ message: "Apprenant non trouvé" });
+      return res.status(404).json({ message: "Formateur non trouvé" });
     }
 
-    await user.remove();
     res.json({ message: "Apprenant supprimé" });
   } catch (error) {
     console.error(error.message);

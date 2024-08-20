@@ -35,7 +35,6 @@ const {
 const auth = require("../middleware/auth");
 const { isAdmin, isFormateur } = require("../middleware/roles");
 
-// Formateur Routes
 const isAdminOrFormateur = (req, res, next) => {
   if (req.user.role !== "admin" && req.user.role !== "formateur") {
     return res.status(403).json({
@@ -48,7 +47,7 @@ const isAdminOrFormateur = (req, res, next) => {
 
 router.post("/add", auth, isAdminOrFormateur, addFormation);
 
-router.get("/my-enrollments", auth, getFormationsForApprenant); // Placez cette route avant les routes dynamiques
+router.get("/my-enrollments", auth, getFormationsForApprenant);
 router.delete("/cancel-enrollment/:formationId", auth, cancelEnrollment);
 router.get("/", auth, isAdmin, getFormations);
 router.get("/my-formations", auth, isFormateur, getMyFormations);
@@ -130,9 +129,8 @@ router.get(
 router.get("/dashboard-stats-apprenant", auth, getApprenantDashboardStats);
 router.get("/totalEnrollments", auth, isAdmin, getEnrollments);
 
-// Public Routes
 router.get("/active", getActiveFormations);
-router.get("/:id", getFormationById); // Placez les routes dynamiques à la fin pour éviter les conflits
+router.get("/:id", getFormationById);
 router.post("/enroll/:formationId", auth, enrollInFormation);
 router.put("/enrollment/:enrollmentId", auth, isAdmin, updateEnrollmentStatus);
 router.get("/enrollments/pending", auth, isAdmin, getPendingEnrollments);

@@ -20,6 +20,7 @@ const Layout = ({ children }) => {
     "/admin/pending-inscriptions",
     "/apprenant/my-enrollments",
     "/admin/enrollments",
+    "/admin/contacts",
   ];
 
   const shouldHideNavbar =

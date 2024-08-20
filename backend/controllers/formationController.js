@@ -31,7 +31,7 @@ const upload = multer({ storage: storage });
 // Ajouter une formation
 exports.addFormation = [
   auth,
-  upload.single("image"),
+  upload.single("image"), // Middleware pour gérer l'upload de l'image
   async (req, res) => {
     const {
       title,
@@ -45,10 +45,10 @@ exports.addFormation = [
     } = req.body;
 
     try {
-      // Determine the formateur ID based on the user's role
+      // Déterminer l'ID du formateur en fonction du rôle de l'utilisateur
       let formateurId;
       if (req.user.role === "admin") {
-        // If the user is an admin, use the formateur ID provided in the request body
+        // Si l'utilisateur est un admin, utiliser l'ID du formateur fourni dans le corps de la requête
         if (!formateur) {
           return res.status(400).json({
             msg: "Formateur is required when adding a formation as an admin",
@@ -56,14 +56,14 @@ exports.addFormation = [
         }
         formateurId = formateur;
       } else if (req.user.role === "formateur") {
-        // If the user is a formateur, assign themselves as the formateur
+        // Si l'utilisateur est un formateur, s'auto-assigner en tant que formateur
         formateurId = req.user.id;
       } else {
-        // If the user doesn't have the correct role, deny the request
+        // Si l'utilisateur n'a pas le bon rôle, refuser la requête
         return res.status(403).json({ msg: "Access denied" });
       }
-
-      // Create the new formation
+      console.log;
+      // Créer la nouvelle formation
       const newFormation = new Formation({
         title,
         description,
@@ -72,13 +72,13 @@ exports.addFormation = [
         dateFin,
         duree,
         prix,
-        image: req.file ? req.file.filename : "",
+        image: req.file ? req.file.filename : "", // Stocker le nom du fichier de l'image
         formateur: formateurId,
       });
 
       const formation = await newFormation.save();
 
-      // Récupérer l'identifiant de l'administrateur
+      // Récupérer les identifiants des administrateurs
       const adminUsers = await User.find({ role: "admin" }).select("_id");
 
       // Créer des notifications pour chaque administrateur
@@ -178,6 +178,7 @@ exports.deleteFormation = async (req, res) => {
 
     // Delete all enrollments associated with the formation
     await Enrollment.deleteMany({ formation: req.params.id });
+    await Notification.deleteMany({ formation: req.params.id });
 
     // Delete the formation
     await Formation.findByIdAndDelete(req.params.id);
@@ -230,7 +231,10 @@ exports.updateFormationStatus = async (req, res) => {
 // Récupérer les formations en attente
 exports.getPendingFormations = async (req, res) => {
   try {
-    const formations = await Formation.find({ status: "pending" });
+    const formations = await Formation.find({ status: "en attente" }).populate(
+      "formateur",
+      "name email"
+    );
     res.json(formations);
   } catch (error) {
     console.error(error.message);
@@ -360,11 +364,11 @@ exports.enrollInFormation = async (req, res) => {
         .json({ message: "Vous êtes déjà inscrit à cette formation." });
     }
 
-    // Créer une nouvelle inscription avec le statut "pending"
+    // Créer une nouvelle inscription avec le statut "en attente"
     const enrollment = new Enrollment({
       apprenant: apprenantId,
       formation: formationId,
-      status: "pending",
+      status: "en attente",
     });
 
     await enrollment.save();
@@ -452,7 +456,7 @@ exports.updateEnrollmentStatus = async (req, res) => {
 // Fetch pending enrollments
 exports.getPendingEnrollments = async (req, res) => {
   try {
-    const pendingEnrollments = await Enrollment.find({ status: "pending" })
+    const pendingEnrollments = await Enrollment.find({ status: "en attente" })
       .populate("apprenant", "name email")
       .populate("formation", "title");
 
@@ -481,7 +485,7 @@ exports.getEnrolledStudents = async (req, res) => {
     const { formationId } = req.params;
     const enrollments = await Enrollment.find({
       formation: formationId,
-      status: "accepted", // Filtrer par statut si nécessaire
+      status: "acceptée", // Filtrer par statut si nécessaire
     }).populate("apprenant", "name email");
 
     // Renvoyer uniquement les détails des apprenants
@@ -502,7 +506,7 @@ exports.getFormationsForApprenant = async (req, res) => {
     // Find all enrollments for the apprenant
     const enrollments = await Enrollment.find({
       apprenant: apprenantId,
-      status: "accepted",
+      status: "acceptée",
     })
       .populate({
         path: "formation",
@@ -522,12 +526,16 @@ exports.getFormationsForApprenant = async (req, res) => {
         const specialty = formation.specialty;
 
         // Determine if the formation is upcoming or completed
-        if (formation.dateDebut > currentDate) {
+        if (
+          formation.dateDebut > currentDate &&
+          formation.dateFin > currentDate
+        ) {
           if (!acc.upcoming[specialty]) {
             acc.upcoming[specialty] = [];
           }
           acc.upcoming[specialty].push(formation);
-        } else if (formation.dateFin < currentDate) {
+        } else if (formation.dateFin <= currentDate) {
+          // Modification ici pour inclure les formations qui sont toujours en cours
           if (!acc.completed[specialty]) {
             acc.completed[specialty] = [];
           }
@@ -582,7 +590,7 @@ exports.sendEmailToApprenants = async (req, res) => {
 
     const enrollments = await Enrollment.find({
       formation: formationId,
-      status: "accepted",
+      status: "acceptée",
     }).populate("apprenant");
 
     const apprenantsEmails = enrollments.map(
@@ -669,18 +677,26 @@ exports.getTodayNewEnrollments = async (req, res) => {
 };
 exports.getTotalEnrolledStudents = async (req, res) => {
   try {
-    const formateurId = req.user.id;
+    const formateurId = req.user._id;
 
-    const enrollments = await Enrollment.find({ status: "accepted" }).populate({
-      path: "formation",
-      match: { formateur: req.user.id },
+    // Rechercher toutes les formations qui appartiennent à ce formateur
+    const formations = await Formation.find({ formateur: formateurId }).select(
+      "_id"
+    );
+
+    // Extraire les IDs des formations
+    const formationIds = formations.map((formation) => formation._id);
+
+    // Rechercher toutes les inscriptions acceptées pour ces formations
+    const totalEnrolled = await Enrollment.countDocuments({
+      formation: { $in: formationIds },
+      status: "acceptée",
     });
-    console.log(enrollments.length);
-    const totalEnrolled = enrollments.length;
+
     res.json({ totalEnrolled });
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server error");
+    res.status(500).send("Erreur du serveur");
   }
 };
 
@@ -692,11 +708,11 @@ exports.getFormationStatusCounts = async (req, res) => {
     });
     const pendingCount = await Formation.countDocuments({
       formateur: req.user.id,
-      status: "pending",
+      status: "en attente",
     });
     const rejectedCount = await Formation.countDocuments({
       formateur: req.user.id,
-      status: "rejected",
+      status: "rejetée",
     });
     res.json({ activeCount, pendingCount, rejectedCount });
   } catch (error) {
@@ -711,7 +727,7 @@ exports.getDailyNewEnrollments = async (req, res) => {
 
     const dailyNewEnrollments = await Enrollment.countDocuments({
       createdAt: { $gte: today },
-      status: "accepted", // Assuming you only want to count accepted enrollments
+      status: "acceptée", // Assuming you only want to count acceptée enrollments
       formation: {
         $in: await Formation.find({ formateur: req.user.id }).select("_id"),
       }, // Only formations of the current formateur
@@ -741,9 +757,31 @@ exports.getCompletedFormations = async (req, res) => {
 
 exports.getMostEnrolledFormation = async (req, res) => {
   try {
+    const formateurId = req.user.id;
+
+    // Rechercher toutes les formations pour le formateur actuel
+    const formateurFormations = await Formation.find({
+      formateur: formateurId,
+    }).select("_id");
+
+    if (formateurFormations.length === 0) {
+      return res.status(200).json({ formationTitle: "No Enrollments" });
+    }
+
+    // Agrégation pour trouver la formation avec le plus d'inscriptions
     const mostEnrolledFormation = await Enrollment.aggregate([
-      { $match: { status: "accepted" } }, // Filter by accepted enrollments
-      { $group: { _id: "$formation", count: { $sum: 1 } } },
+      {
+        $match: {
+          status: "acceptée",
+          formation: { $in: formateurFormations.map((f) => f._id) },
+        },
+      },
+      {
+        $group: {
+          _id: "$formation",
+          count: { $sum: 1 },
+        },
+      },
       { $sort: { count: -1 } },
       { $limit: 1 },
     ]);
@@ -755,10 +793,11 @@ exports.getMostEnrolledFormation = async (req, res) => {
       return res.status(200).json({ formationTitle: "No Enrollments" });
     }
   } catch (error) {
-    console.error(error.message);
+    console.error("Error fetching most enrolled formation:", error.message);
     res.status(500).send("Server error");
   }
 };
+
 exports.getAdminDashboardStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
@@ -785,7 +824,7 @@ exports.getAdminDashboardStats = async (req, res) => {
 
     // Calculate the number of apprenants by formation
     const apprenantsByFormation = await Enrollment.aggregate([
-      { $match: { status: "accepted" } }, // Only count accepted enrollments
+      { $match: { status: "acceptée" } }, // Only count acceptée enrollments
       { $group: { _id: "$formation", count: { $sum: 1 } } },
       {
         $lookup: {
@@ -801,7 +840,7 @@ exports.getAdminDashboardStats = async (req, res) => {
 
     // Calculate the number of apprenants by formateur
     const apprenantsByFormateur = await Enrollment.aggregate([
-      { $match: { status: "accepted" } },
+      { $match: { status: "acceptée" } },
       {
         $lookup: {
           from: "formations",
@@ -851,7 +890,7 @@ exports.getAdminDashboardStats = async (req, res) => {
 exports.getTopFormationsByEnrollment = async (req, res) => {
   try {
     const topFormations = await Enrollment.aggregate([
-      { $match: { status: "accepted" } }, // Filter only accepted enrollments
+      { $match: { status: "acceptée" } }, // Filter only acceptée enrollments
       { $group: { _id: "$formation", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 5 }, // Top 5 formations
@@ -927,33 +966,44 @@ exports.getApprenantDashboardStats = async (req, res) => {
     // Get total formations the user is enrolled in
     const totalFormations = await Enrollment.countDocuments({
       apprenant: objectIdApprenantId,
-      status: "accepted",
+      status: "acceptée",
     });
 
     // Get completed formations where the end date is in the past
-    const completedFormations = await Enrollment.countDocuments({
+    const completedFormations = await Enrollment.find({
       apprenant: objectIdApprenantId,
-      status: "accepted",
+      status: "acceptée",
     })
       .populate({
         path: "formation",
-        match: { dateFin: { $lt: currentDate } },
+        match: {
+          dateFin: { $lt: currentDate },
+          dateDebut: { $lt: currentDate },
+        }, // Completed if end date is before the current date
+        select: "title dateFin dateDebut ",
       })
       .exec();
 
     // Get upcoming formations where the start date is in the future
     const upcomingFormations = await Enrollment.find({
       apprenant: objectIdApprenantId,
-      status: "accepted",
+      status: "acceptée",
     })
       .populate({
         path: "formation",
-        match: { dateDebut: { $gt: currentDate } },
-        select: "title dateDebut",
+        match: {
+          dateDebut: { $gt: currentDate }, // Ongoing if start date is before the current date
+          dateFin: { $gt: currentDate }, // and end date is after the current date
+        },
+        select: "title dateDebut dateFin",
       })
       .exec();
 
-    // Filter out any enrollments that don't have populated formations
+    // Filter out any enrollments that don't have populated formations (just in case)
+    const filteredCompletedFormations = completedFormations.filter(
+      (enrollment) => enrollment.formation !== null
+    );
+
     const filteredUpcomingFormations = upcomingFormations.filter(
       (enrollment) => enrollment.formation !== null
     );
@@ -963,7 +1013,7 @@ exports.getApprenantDashboardStats = async (req, res) => {
       {
         $match: {
           apprenant: objectIdApprenantId,
-          status: "accepted",
+          status: "acceptée",
         },
       },
       {
@@ -989,7 +1039,7 @@ exports.getApprenantDashboardStats = async (req, res) => {
       {
         $match: {
           apprenant: objectIdApprenantId,
-          status: "accepted",
+          status: "acceptée",
         },
       },
       {
@@ -1013,7 +1063,7 @@ exports.getApprenantDashboardStats = async (req, res) => {
     // Return the data
     res.status(200).json({
       totalFormations,
-      completedFormations,
+      completedFormations: filteredCompletedFormations.length,
       upcomingFormations: filteredUpcomingFormations.map((enrollment) => ({
         _id: enrollment.formation._id,
         title: enrollment.formation.title,

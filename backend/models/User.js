@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 
-const defimg =
-  "https://cdn.pixabay.com/photo/2017/03/21/13/27/evil-2162179_640.png";
+const defimg = "profil1.png";
 
 const UserSchema = new mongoose.Schema(
   {

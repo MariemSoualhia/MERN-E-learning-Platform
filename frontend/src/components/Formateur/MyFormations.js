@@ -176,8 +176,8 @@ const MyFormations = () => {
                 <em>Tous</em>
               </MenuItem>
               <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="pending">Pending</MenuItem>
-              <MenuItem value="rejected">Rejected</MenuItem>
+              <MenuItem value="en attente">En attente</MenuItem>
+              <MenuItem value="rejetée">Rejetée</MenuItem>
             </Select>
           </FormControl>
           <Button
@@ -220,7 +220,7 @@ const MyFormations = () => {
                     Durée: {formation.duree} heures
                   </Typography>
                   <Typography variant="body1">
-                    Prix: {formation.prix} €
+                    Prix: {formation.prix} DT
                   </Typography>
                 </Box>
                 <Divider sx={{ my: 2 }} />
@@ -336,14 +336,16 @@ const MyFormations = () => {
               <Box
                 sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}
               >
-                <Button
-                  color="primary"
-                  variant="outlined"
-                  onClick={handleSendEmail}
-                  disabled={!currentFormation || !currentFormation._id}
-                >
-                  Envoyer Email
-                </Button>
+                {apprenants.length > 0 && (
+                  <Button
+                    color="primary"
+                    variant="outlined"
+                    onClick={handleSendEmail}
+                    disabled={!currentFormation || !currentFormation._id}
+                  >
+                    Envoyer Email
+                  </Button>
+                )}
                 <Button color="secondary" onClick={handleApprenantsCancel}>
                   Fermer
                 </Button>

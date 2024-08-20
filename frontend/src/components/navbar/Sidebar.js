@@ -34,7 +34,7 @@ import axios from "axios";
 import io from "socket.io-client";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { styled, useTheme } from "@mui/material/styles";
-
+import LocalPostOfficeIcon from "@mui/icons-material/LocalPostOffice";
 const drawerWidth = 240;
 
 const DrawerHeader = styled("div")(({ theme }) => ({
@@ -352,6 +352,16 @@ const Sidebar = ({ role }) => {
                   </Typography>
                 )}
               </ListItem>
+              <ListItem button component={Link} to="/admin/contacts">
+                <ListItemIcon sx={{ color: "white" }}>
+                  <LocalPostOfficeIcon />
+                </ListItemIcon>
+                {open && (
+                  <Typography variant="body1" sx={{ color: "white" }}>
+                    Gestion des contacts
+                  </Typography>
+                )}
+              </ListItem>
             </>
           )}
           {role === "formateur" && (
@@ -437,7 +447,7 @@ const Sidebar = ({ role }) => {
                   <ListItem
                     button
                     component={Link}
-                    to="/apprenant/formations/reseau"
+                    to="/apprenant/formations/réseau"
                     sx={{ pl: 8, color: "white" }}
                   >
                     <ListItemIcon sx={{ color: "white" }}>
@@ -450,7 +460,7 @@ const Sidebar = ({ role }) => {
                   <ListItem
                     button
                     component={Link}
-                    to="/apprenant/formations/gestion-de-projets"
+                    to="/apprenant/formations/gestion de projets"
                     sx={{ pl: 8, color: "white" }}
                   >
                     <ListItemIcon sx={{ color: "white" }}>

@@ -369,8 +369,8 @@ const ManageFormations = () => {
                   allowClear
                 >
                   <Option value="active">Active</Option>
-                  <Option value="pending">Pending</Option>
-                  <Option value="rejected">Rejected</Option>
+                  <Option value="en attente">En attente</Option>
+                  <Option value="rejetée">Rejetée</Option>
                 </Select>
               </Form.Item>
               <Form.Item name="specialty" label="Filtrer par spécialité">
@@ -532,7 +532,7 @@ const ManageFormations = () => {
             >
               <Select placeholder="Sélectionnez le statut">
                 <Option value="active">Active</Option>
-                <Option value="pending">Pending</Option>
+                <Option value="en attente">En attente</Option>
                 <Option value="rejected">Rejected</Option>
               </Select>
             </Form.Item>

@@ -75,7 +75,7 @@ const ManageApprenants = () => {
   const handleDelete = async (id) => {
     const token = localStorage.getItem("token");
     try {
-      await axios.delete(`http://localhost:5000/api/users/${id}`, {
+      await axios.delete(`http://localhost:5000/api/users/apprenants/${id}`, {
         headers: {
           "x-auth-token": token,
         },
@@ -93,44 +93,45 @@ const ManageApprenants = () => {
 
   const handleFinish = async (values) => {
     const token = localStorage.getItem("token");
-    const url = isEdit
-      ? `http://localhost:5000/api/users/apprenants/${selectedApprenant._id}`
-      : "http://localhost:5000/api/users";
-    const method = isEdit ? "put" : "post";
-
-    const formData = new FormData();
-    formData.append("name", values.name);
-    formData.append("email", values.email);
-    formData.append("phoneNumber", values.phoneNumber);
-    formData.append("address", JSON.stringify(values.address)); // Store as JSON
-    formData.append("bio", values.bio);
-    formData.append("socialLinks", JSON.stringify(values.socialLinks)); // Store as JSON
-
-    if (values.photoProfil && values.photoProfil.file) {
-      formData.append("photoProfil", values.photoProfil.file.originFileObj);
-    }
-
-    if (!isEdit) {
-      formData.append("password", values.password);
-    }
 
     try {
-      await axios[method](url, formData, {
-        headers: {
-          "x-auth-token": token,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      if (isEdit && selectedApprenant && selectedApprenant._id) {
+        const response = await axios.put(
+          `http://localhost:5000/api/users/apprenants/${selectedApprenant._id}`,
+          values,
+          {
+            headers: {
+              "x-auth-token": token,
+            },
+          }
+        );
+        console.log(response.data);
+      } else {
+        const response = await axios.post(
+          "http://localhost:5000/api/users",
+          values,
+          {
+            headers: {
+              "x-auth-token": token,
+            },
+          }
+        );
+      }
+
+      // Message de succès selon l'opération
       message.success(
         isEdit
-          ? "Apprenant mis à jour avec succès"
-          : "Apprenant ajouté avec succès"
+          ? "Formateur mis à jour avec succès"
+          : "Formateur ajouté avec succès"
       );
+
+      // Rechargement des formateurs et fermeture du modal
       fetchApprenants();
       setIsModalVisible(false);
     } catch (error) {
-      message.error("Erreur lors de l'ajout/mise à jour de l'apprenant");
-      console.error(error);
+      // Gestion des erreurs lors de l'appel API
+      console.error("Erreur lors de l'appel API:", error);
+      message.error("Erreur lors de l'ajout/mise à jour du formateur");
     }
   };
 
@@ -274,7 +275,7 @@ const ManageApprenants = () => {
               >
                 Refresh
               </Button>
-              <Button
+              {/* <Button
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={handleAdd}
@@ -284,7 +285,7 @@ const ManageApprenants = () => {
                 }}
               >
                 Ajouter un apprenant
-              </Button>
+              </Button> */}
             </Box>
           </Box>
 
@@ -374,28 +375,15 @@ const ManageApprenants = () => {
             >
               <Input.TextArea placeholder="Liens sociaux (e.g., Facebook, LinkedIn)" />
             </Form.Item>
-            <Form.Item name="photoProfil" label="Photo de Profil">
+            {/* <Form.Item name="photoProfil" label="Photo de Profil">
               <Upload
                 listType="picture"
                 beforeUpload={() => false} // Prevent automatic upload
               >
                 <Button icon={<UploadOutlined />}>Télécharger une image</Button>
               </Upload>
-            </Form.Item>
-            {!isEdit && (
-              <Form.Item
-                name="password"
-                label="Mot de passe"
-                rules={[
-                  {
-                    required: true,
-                    message: "Veuillez entrer le mot de passe",
-                  },
-                ]}
-              >
-                <Input.Password placeholder="Mot de passe" />
-              </Form.Item>
-            )}
+            </Form.Item> */}
+
             <Form.Item>
               <Button type="primary" htmlType="submit">
                 {isEdit ? "Mettre à jour" : "Ajouter"}

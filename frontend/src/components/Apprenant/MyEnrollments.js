@@ -24,6 +24,7 @@ const MyEnrollments = () => {
         }
       );
       setFormationsBySpecialty(res.data);
+      console.log(res.data);
     } catch (error) {
       console.error(error);
       message.error("Erreur lors de la récupération des formations.");
@@ -116,7 +117,7 @@ const MyEnrollments = () => {
                         <strong>Durée:</strong> {formation.duree} heures
                       </Typography>
                       <Typography variant="body2" sx={{ mt: 1 }}>
-                        <strong>Prix:</strong> {formation.prix} €
+                        <strong>Prix:</strong> {formation.prix}
                       </Typography>
                     </Box>
                     <Box sx={{ textAlign: "center", mb: 2 }}>
@@ -201,7 +202,7 @@ const MyEnrollments = () => {
                         <strong>Durée:</strong> {formation.duree} heures
                       </Typography>
                       <Typography variant="body2" sx={{ mt: 1 }}>
-                        <strong>Prix:</strong> {formation.prix} €
+                        <strong>Prix:</strong> {formation.prix}
                       </Typography>
                     </Box>
                     <Box sx={{ textAlign: "center", mb: 2 }}>
@@ -266,7 +267,7 @@ const MyEnrollments = () => {
                   <strong>Durée:</strong> {currentFormation.duree} heures
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
-                  <strong>Prix:</strong> {currentFormation.prix} €
+                  <strong>Prix:</strong> {currentFormation.prix}
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
                   <strong>Formateur:</strong>{" "}

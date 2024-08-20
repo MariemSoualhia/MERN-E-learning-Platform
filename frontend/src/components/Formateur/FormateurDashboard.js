@@ -136,8 +136,8 @@ const FormateurDashboard = () => {
 
   const statusData = [
     { name: "Active", value: formationStatusCounts.activeCount },
-    { name: "Pending", value: formationStatusCounts.pendingCount },
-    { name: "Rejected", value: formationStatusCounts.rejectedCount },
+    { name: "En attente", value: formationStatusCounts.pendingCount },
+    { name: "Rejetée", value: formationStatusCounts.rejectedCount },
   ];
 
   return (

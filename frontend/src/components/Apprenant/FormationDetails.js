@@ -103,7 +103,7 @@ const FormationDetails = () => {
                 Durée: {formation.duree} heures
               </Typography>
               <Typography variant="body1" gutterBottom>
-                Prix: {formation.prix} €
+                Prix: {formation.prix} DT
               </Typography>
               <Typography variant="body1" gutterBottom>
                 Date de début:{" "}

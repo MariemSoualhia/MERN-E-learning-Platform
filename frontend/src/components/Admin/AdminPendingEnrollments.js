@@ -39,7 +39,7 @@ const AdminPendingEnrollments = () => {
       );
       message.success(
         `Inscription ${
-          status === "accepted" ? "acceptée" : "rejetée"
+          status === "acceptée" ? "acceptée" : "rejetée"
         } avec succès!`
       );
       fetchPendingEnrollments();
@@ -72,7 +72,7 @@ const AdminPendingEnrollments = () => {
         <>
           <Popconfirm
             title="Êtes-vous sûr de vouloir accepter cette inscription?"
-            onConfirm={() => handleUpdateStatus(record._id, "accepted")}
+            onConfirm={() => handleUpdateStatus(record._id, "acceptée")}
             okText="Oui"
             cancelText="Non"
           >
@@ -94,11 +94,11 @@ const AdminPendingEnrollments = () => {
   ];
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ marginTop: "50px", display: "flex", minHeight: "100vh" }}>
       <Sidebar role="admin" />
       <Container sx={{ flexGrow: 1, p: 3, backgroundColor: "#f4f6f8" }}>
         <Box sx={{ my: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom>
+          <Typography variant="h2" component="h1" gutterBottom>
             Inscriptions en Attente
           </Typography>
           <Table columns={columns} dataSource={enrollments} rowKey="_id" />

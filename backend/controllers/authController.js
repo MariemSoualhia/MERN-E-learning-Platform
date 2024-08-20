@@ -55,7 +55,7 @@ exports.login = async (req, res) => {
         role: user.role,
       },
     };
-    const token = jwt.sign(payload, "yourSecretKey", { expiresIn: "1h" });
+    const token = jwt.sign(payload, "yourSecretKey", { expiresIn: "24h" });
 
     res.status(200).json({
       token: token,

@@ -14,13 +14,10 @@ const EnrollmentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "accepted", "rejected"],
-    default: "pending",
+    enum: ["en attente", "acceptée", "rejetée"],
+    default: "en attente",
   },
-  progression: {
-    type: Number,
-    default: 0, // Progression en pourcentage, 0 à 100
-  },
+
   createdAt: {
     type: Date,
     default: Date.now,

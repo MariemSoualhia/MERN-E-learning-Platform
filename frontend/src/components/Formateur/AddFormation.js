@@ -54,10 +54,11 @@ const AddFormation = () => {
   const user = JSON.parse(localStorage.getItem("currentuser"));
 
   const handleFileChange = (info) => {
+    console.log(info);
     if (info.file.status === "removed") {
       setFile(null);
     } else {
-      setFile(info.file.originFileObj);
+      setFile(info.file);
     }
   };
 
@@ -75,6 +76,7 @@ const AddFormation = () => {
     formData.append("specialty", user.specialty);
 
     if (file) {
+      console.log(file);
       formData.append("image", file);
     }
 

@@ -117,139 +117,173 @@ const Login = () => {
   };
 
   return (
-    <BackgroundContainer>
-      <CssBaseline />
-      <Container
-        component={motion.div}
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        maxWidth="xs"
-        sx={{
-          padding: 4,
-          boxShadow: 3,
-          borderRadius: 2,
-          backgroundColor: "rgba(255, 255, 255, 0.8)",
-        }}
-      >
-        <Typography
-          variant="h2"
-          component={motion.h1}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1 }}
-          gutterBottom
-          align="center"
-        >
-          Connexion
-        </Typography>
-        <Typography
-          variant="body2"
-          gutterBottom
-          align="center"
+    <>
+      <BackgroundContainer>
+        <CssBaseline />
+        <Container
           component={motion.div}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 1 }}
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          maxWidth="xs"
+          sx={{
+            padding: 4,
+            boxShadow: 3,
+            borderRadius: 2,
+            backgroundColor: "rgba(255, 255, 255, 0.8)",
+          }}
         >
-          Vous n'avez pas de compte ?{" "}
-          <Link href="/register">Inscrivez-vous</Link>
-        </Typography>
-        {error && <Alert severity="error">{error}</Alert>}
-        <form onSubmit={handleSubmit}>
-          <TextField
-            label="Adresse email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            fullWidth
-            margin="normal"
-            component={motion.div}
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          />
-          <TextField
-            label="Mot de passe"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            fullWidth
-            margin="normal"
-            component={motion.div}
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          />
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mt: 2,
-            }}
-          >
-            <Link href="#" variant="body2" onClick={handleClickOpen}>
-              Mot de passe oublié ?
-            </Link>
-          </Box>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            sx={{ mt: 3, mb: 2 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 300 }}
+          <Typography
+            variant="h2"
+            component={motion.h1}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+            gutterBottom
+            align="center"
           >
             Connexion
-          </Button>
-        </form>
-      </Container>
+          </Typography>
+          <Typography
+            variant="body2"
+            gutterBottom
+            align="center"
+            component={motion.div}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 1 }}
+          >
+            Vous n'avez pas de compte ?{" "}
+            <Link href="/register">Inscrivez-vous</Link>
+          </Typography>
+          {error && <Alert severity="error">{error}</Alert>}
+          <form onSubmit={handleSubmit}>
+            <TextField
+              label="Adresse email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              fullWidth
+              margin="normal"
+              component={motion.div}
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+            />
+            <TextField
+              label="Mot de passe"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              fullWidth
+              margin="normal"
+              component={motion.div}
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+            />
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mt: 2,
+              }}
+            >
+              <Link href="#" variant="body2" onClick={handleClickOpen}>
+                Mot de passe oublié ?
+              </Link>
+            </Box>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              sx={{ mt: 3, mb: 2 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              Connexion
+            </Button>
+          </form>
+        </Container>
 
-      {/* Boîte de dialogue de réinitialisation de mot de passe */}
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        component={motion.div}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-      >
-        <DialogTitle>Mot de passe oublié</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Veuillez saisir votre adresse email. Nous vous enverrons un lien
-            pour réinitialiser votre mot de passe.
-          </DialogContentText>
-          {resetMessage && (
-            <Alert severity="info" sx={{ mt: 2 }}>
-              {resetMessage}
-            </Alert>
-          )}
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Adresse email"
-            type="email"
-            fullWidth
-            value={resetEmail}
-            onChange={(e) => setResetEmail(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} color="primary">
-            Annuler
-          </Button>
-          <Button onClick={handleForgotPasswordSubmit} color="primary">
-            Envoyer
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </BackgroundContainer>
+        {/* Boîte de dialogue de réinitialisation de mot de passe */}
+        <Dialog
+          open={open}
+          onClose={handleClose}
+          component={motion.div}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <DialogTitle>Mot de passe oublié</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Veuillez saisir votre adresse email. Nous vous enverrons un lien
+              pour réinitialiser votre mot de passe.
+            </DialogContentText>
+            {resetMessage && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                {resetMessage}
+              </Alert>
+            )}
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Adresse email"
+              type="email"
+              fullWidth
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose} color="primary">
+              Annuler
+            </Button>
+            <Button onClick={handleForgotPasswordSubmit} color="primary">
+              Envoyer
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </BackgroundContainer>
+      <Box sx={{ bgcolor: "#1E3A8A", color: "#FFFFFF", py: 3 }}>
+        <Container>
+          <Typography variant="h6" component="h3" align="center">
+            Rejoignez CNILearn aujourd'hui et commencez votre parcours
+            d'apprentissage!
+          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              size="large"
+              href="/register"
+              sx={{
+                "&:hover": {
+                  transform: "scale(1.05)",
+                  transition: "transform 0.3s ease-in-out",
+                },
+              }}
+            >
+              Inscrivez-vous maintenant
+            </Button>
+          </Box>
+        </Container>
+      </Box>
+
+      <Box sx={{ bgcolor: "#0D1B47", color: "#FFFFFF", py: 2 }}>
+        <Container>
+          <Typography variant="body2" align="center">
+            © 2024 CNILearn. Tous droits réservés.
+          </Typography>
+        </Container>
+      </Box>
+    </>
   );
 };
 

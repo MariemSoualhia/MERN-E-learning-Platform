@@ -9,9 +9,10 @@ const bcrypt = require("bcryptjs");
 const connectDB = require("./db");
 const User = require("./models/User");
 const authRoutes = require("./routes/auth");
-const courseRoutes = require("./routes/courses");
 const userRoutes = require("./routes/user");
 const formationRoutes = require("./routes/formation");
+const contactRoutes = require("./routes/contact");
+
 const socket = require("./socket");
 require("dotenv").config();
 
@@ -36,7 +37,7 @@ io.on("connection", (socket) => {
 // Fonction pour créer un administrateur par défaut
 const createDefaultAdmin = async () => {
   try {
-    const adminEmail = "admin@example.com";
+    const adminEmail = "admin@gmail.com";
     const existingAdmin = await User.findOne({ email: adminEmail });
 
     if (!existingAdmin) {
@@ -66,9 +67,9 @@ connectDB().then(createDefaultAdmin);
 // Routes
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", authRoutes);
-app.use("/api/courses", courseRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/formations", formationRoutes);
+app.use("/api/contact", contactRoutes);
 
 app.get("/static-images/:filename", (req, res) => {
   const filename = req.params.filename;

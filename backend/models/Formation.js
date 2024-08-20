@@ -16,8 +16,8 @@ const FormationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "active", "rejected"],
-    default: "pending",
+    enum: ["en attente", "active", "rejetée"],
+    default: "en attente",
   },
   dateDebut: {
     type: Date,

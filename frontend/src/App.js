@@ -33,6 +33,7 @@ import MyEnrollments from "./components/Apprenant/MyEnrollments";
 import ResetPassword from "./components/Auth/ResetPassword";
 import EnrollmentManager from "./components/Admin/EnrollmentManager.";
 import Formations from "./components/home/Formations";
+import AdminContacts from "./components/Admin/AdminContacts";
 const App = () => {
   return (
     <ThemeProvider theme={theme}>
@@ -215,6 +216,14 @@ const App = () => {
               element={
                 <PrivateRoute>
                   <EnrollmentManager />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/contacts"
+              element={
+                <PrivateRoute>
+                  <AdminContacts />
                 </PrivateRoute>
               }
             />

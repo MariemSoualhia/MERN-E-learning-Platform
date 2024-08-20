@@ -131,9 +131,6 @@ const EditFormationForm = ({ formation, onClose, onUpdate }) => {
           margin="normal"
           type="number"
           required
-          InputProps={{
-            startAdornment: <InputAdornment position="start">€</InputAdornment>,
-          }}
         />
         <TextField
           fullWidth

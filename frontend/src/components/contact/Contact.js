@@ -11,6 +11,7 @@ import {
   Alert,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import axios from "axios";
 
 const ContactSection = styled(Box)({
   backgroundSize: "cover",
@@ -31,7 +32,7 @@ const Contact = () => {
   const [message, setMessage] = useState("");
   const [open, setOpen] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!name || !email || !message) {
@@ -39,16 +40,23 @@ const Contact = () => {
       return;
     }
 
-    // Handle form submission logic
-    console.log("Form submitted:", { name, email, message });
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/contact/submit",
+        { name, email, message }
+      );
 
-    // Clear the form
-    setName("");
-    setEmail("");
-    setMessage("");
+      // Clear the form
+      setName("");
+      setEmail("");
+      setMessage("");
 
-    // Show confirmation
-    setOpen(true);
+      // Show confirmation
+      setOpen(true);
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du message:", error);
+      alert("Erreur lors de l'envoi du message.");
+    }
   };
 
   const handleClose = () => {
@@ -132,6 +140,38 @@ const Contact = () => {
           Votre message a été envoyé avec succès !
         </Alert>
       </Snackbar>
+      <Box sx={{ bgcolor: "#1E3A8A", color: "#FFFFFF", py: 3 }}>
+        <Container>
+          <Typography variant="h6" component="h3" align="center">
+            Rejoignez CNILearn aujourd'hui et commencez votre parcours
+            d'apprentissage!
+          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              size="large"
+              href="/register"
+              sx={{
+                "&:hover": {
+                  transform: "scale(1.05)",
+                  transition: "transform 0.3s ease-in-out",
+                },
+              }}
+            >
+              Inscrivez-vous maintenant
+            </Button>
+          </Box>
+        </Container>
+      </Box>
+
+      <Box sx={{ bgcolor: "#0D1B47", color: "#FFFFFF", py: 2 }}>
+        <Container>
+          <Typography variant="body2" align="center">
+            © 2024 CNILearn. Tous droits réservés.
+          </Typography>
+        </Container>
+      </Box>
     </>
   );
 };

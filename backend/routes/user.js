@@ -66,32 +66,26 @@ router.get(
   getUserById
 );
 
-// Route pour récupérer les utilisateurs en fonction de leur rôle
 router.get("/", getUsersByRole);
 
-// CRUD pour les formateurs
 router.get("/formateurs", auth, isAdmin, getFormateurs);
 router.post("/formateurs", auth, isAdmin, createFormateur);
 router.put("/formateurs/:id", auth, isAdmin, updateFormateur);
 router.delete("/formateurs/:id", auth, isAdmin, deleteFormateur);
 
-// CRUD pour les apprenants
 router.post("/apprenants", auth, isAdmin, createApprenant);
 router.put("/apprenants/:id", auth, isAdmin, updateApprenant);
 router.delete("/apprenants/:id", auth, isAdmin, deleteApprenant);
 
-// Route pour mettre à jour le profil
 router.put("/profile/:id", auth, updateProfile);
 
-// Route pour changer le mot de passe
 router.put("/profile/change-password/:id", auth, changePassword);
 
-// Route pour mettre à jour la photo de profil
 router.put(
   "/profile/photo/:id",
-  auth, // Middleware d'authentification
-  upload.single("photoProfil"), // Middleware multer pour gérer un seul fichier nommé 'photo'
-  updateProfilePicture // Contrôleur pour mettre à jour la photo de profil
+  auth,
+  upload.single("photoProfil"),
+  updateProfilePicture
 );
 
 module.exports = router;
