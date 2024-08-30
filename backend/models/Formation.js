@@ -45,11 +45,25 @@ const FormationSchema = new mongoose.Schema({
     required: true,
   },
   meetLink: { type: String }, // Nouveau champ pour le lien Google Meet
-
+  quiz: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Quiz",
+  },
   dateCreation: {
     type: Date,
     default: Date.now,
   },
+  apprenants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  quizSubmissions: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "QuizSubmission" },
+  ],
+  videos: [
+    {
+      url: { type: String, required: false },
+      title: { type: String, required: false },
+      date: { type: Date, default: Date.now },
+    },
+  ],
 });
 
 module.exports = mongoose.model("Formation", FormationSchema);

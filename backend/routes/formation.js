@@ -31,6 +31,9 @@ const {
   getEnrollments,
   deleteEnrollment,
   getApprenantDashboardStats,
+  uploadVideo,
+  getVideos,
+  deleteVideo,
 } = require("../controllers/formationController");
 const auth = require("../middleware/auth");
 const { isAdmin, isFormateur } = require("../middleware/roles");
@@ -141,5 +144,7 @@ router.post(
   sendEmailToApprenants
 );
 router.delete("/enrollment/:enrollmentId", auth, isAdmin, deleteEnrollment);
-
+router.post("/videos/upload/:formationId", uploadVideo); // Route to upload video
+router.get("/videos/:formationId", getVideos); // Route to get all videos for a formation
+router.delete("/videos/:formationId/:videoId", deleteVideo); // Route to delete a video
 module.exports = router;

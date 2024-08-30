@@ -34,6 +34,9 @@ import ResetPassword from "./components/Auth/ResetPassword";
 import EnrollmentManager from "./components/Admin/EnrollmentManager.";
 import Formations from "./components/home/Formations";
 import AdminContacts from "./components/Admin/AdminContacts";
+import LearnerScores from "./components/Formateur/LearnerScores";
+import QuizManagement from "./components/Formateur/QuizManagement";
+import VideoManagement from "./components/Formateur/VideoManagement";
 const App = () => {
   return (
     <ThemeProvider theme={theme}>
@@ -168,6 +171,30 @@ const App = () => {
               element={
                 <PrivateRoute>
                   <AddFormation />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/formateur/scores"
+              element={
+                <PrivateRoute>
+                  <LearnerScores />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/formateur/quizs"
+              element={
+                <PrivateRoute>
+                  <QuizManagement />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/formateur/videos"
+              element={
+                <PrivateRoute>
+                  <VideoManagement />
                 </PrivateRoute>
               }
             />

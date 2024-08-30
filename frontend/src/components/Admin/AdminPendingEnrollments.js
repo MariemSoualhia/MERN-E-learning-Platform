@@ -82,7 +82,7 @@ const AdminPendingEnrollments = () => {
           </Popconfirm>
           <Popconfirm
             title="Êtes-vous sûr de vouloir rejeter cette inscription?"
-            onConfirm={() => handleUpdateStatus(record._id, "rejected")}
+            onConfirm={() => handleUpdateStatus(record._id, "rejetée")}
             okText="Oui"
             cancelText="Non"
           >

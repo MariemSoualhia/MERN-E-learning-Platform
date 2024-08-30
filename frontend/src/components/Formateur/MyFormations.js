@@ -15,14 +15,15 @@ import {
   MenuItem,
   InputLabel,
   FormControl,
+  TextField,
+  IconButton,
 } from "@mui/material";
 import {
-  PlusOutlined,
-  EditOutlined,
   DeleteOutlined,
-  EyeOutlined,
   SyncOutlined,
+  AddCircleOutline,
 } from "@ant-design/icons";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { message } from "antd";
 import axios from "axios";
 import Sidebar from "../navbar/Sidebar";
@@ -39,6 +40,10 @@ const MyFormations = () => {
   const [userDetailsVisible, setUserDetailsVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [statusFilter, setStatusFilter] = useState(""); // Filter by status
+  const [quizVisible, setQuizVisible] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState([
+    { questionText: "", options: ["", "", "", ""], correctAnswer: "" },
+  ]);
 
   useEffect(() => {
     fetchFormations();
@@ -156,6 +161,106 @@ const MyFormations = () => {
     setStatusFilter(""); // Reset the filter
   };
 
+  const showQuizModal = async (formation) => {
+    setCurrentFormation(formation);
+
+    if (formation.quizExists) {
+      try {
+        // API call to get existing quiz questions
+        const res = await axios.get(
+          `http://localhost:5000/api/quiz/formation/${formation._id}`,
+          {
+            headers: { "x-auth-token": localStorage.getItem("token") },
+          }
+        );
+        setQuizQuestions(res.data.questions); // Assuming API returns { questions: [...] }
+      } catch (error) {
+        console.error("Erreur lors du chargement du quiz existant:", error);
+        message.error("Impossible de charger le quiz existant.");
+        return;
+      }
+    } else {
+      // If no existing quiz, reset to default empty question
+      setQuizQuestions([
+        { questionText: "", options: ["", "", "", ""], correctAnswer: "" },
+      ]);
+    }
+
+    setQuizVisible(true);
+  };
+
+  const handleQuizCancel = () => {
+    setQuizVisible(false);
+  };
+
+  const handleQuizSubmit = async () => {
+    // Validate quiz before submission
+    const isValidQuiz = quizQuestions.every(
+      (question) =>
+        question.questionText.trim() !== "" &&
+        question.correctAnswer.trim() !== "" &&
+        question.options.every((option) => option.trim() !== "")
+    );
+
+    if (!isValidQuiz) {
+      message.error("Veuillez remplir tous les champs du quiz correctement.");
+      return;
+    }
+
+    try {
+      if (currentFormation?.quizExists) {
+        // API call to update existing quiz
+        await axios.put(
+          `http://localhost:5000/api/quiz/update/${currentFormation._id}`,
+          { questions: quizQuestions },
+          {
+            headers: { "x-auth-token": localStorage.getItem("token") },
+          }
+        );
+        message.success("Quiz updated successfully!");
+      } else {
+        // API call to create a new quiz
+        await axios.post(
+          `http://localhost:5000/api/quiz/create`,
+          { formationId: currentFormation._id, questions: quizQuestions },
+          {
+            headers: { "x-auth-token": localStorage.getItem("token") },
+          }
+        );
+        message.success("Quiz created successfully!");
+      }
+
+      setQuizVisible(false);
+    } catch (error) {
+      message.error("Failed to update quiz.");
+      console.error(error);
+    }
+  };
+
+  const handleQuestionChange = (index, field, value) => {
+    const updatedQuestions = [...quizQuestions];
+    if (field === "questionText") {
+      updatedQuestions[index].questionText = value;
+    } else if (field === "correctAnswer") {
+      updatedQuestions[index].correctAnswer = value;
+    } else {
+      updatedQuestions[index].options[field] = value;
+    }
+    setQuizQuestions(updatedQuestions);
+  };
+
+  const handleAddQuestion = () => {
+    setQuizQuestions([
+      ...quizQuestions,
+      { questionText: "", options: ["", "", "", ""], correctAnswer: "" },
+    ]);
+  };
+
+  const handleRemoveQuestion = (index) => {
+    const updatedQuestions = quizQuestions.filter((_, i) => i !== index);
+    setQuizQuestions(updatedQuestions);
+  };
+
   return (
     <Box sx={{ marginTop: "50px", display: "flex", minHeight: "100vh" }}>
       <Sidebar role="formateur" />
@@ -251,10 +356,110 @@ const MyFormations = () => {
                     Annuler la formation
                   </Button>
                 </Box>
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                  {formation.quizExists ? (
+                    <Button onClick={() => showQuizModal(formation)}>
+                      Modifier le Quiz
+                    </Button>
+                  ) : (
+                    <Button onClick={() => showQuizModal(formation)}>
+                      Ajouter un Quiz
+                    </Button>
+                  )}
+                </Box>
               </Card>
             </Grid>
           ))}
         </Grid>
+        <Modal
+          open={quizVisible}
+          onClose={handleQuizCancel}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1300,
+            backdropFilter: "blur(3px)",
+          }}
+        >
+          <Box
+            sx={{
+              backgroundColor: "white",
+              padding: 3,
+              borderRadius: 2,
+              maxHeight: "80vh",
+              overflowY: "auto",
+            }}
+          >
+            <Typography variant="h4" gutterBottom>
+              {currentFormation?.quizExists
+                ? "Modifier le Quiz"
+                : "Créer un Quiz"}
+            </Typography>
+            {quizQuestions.map((question, index) => (
+              <Box key={index} sx={{ marginBottom: 2 }}>
+                <TextField
+                  label={`Question ${index + 1}`}
+                  fullWidth
+                  value={question.questionText}
+                  onChange={(e) =>
+                    handleQuestionChange(index, "questionText", e.target.value)
+                  }
+                  sx={{ mb: 2 }}
+                />
+                {question.options.map((option, optionIndex) => (
+                  <TextField
+                    key={optionIndex}
+                    label={`Option ${optionIndex + 1}`}
+                    fullWidth
+                    value={option}
+                    onChange={(e) =>
+                      handleQuestionChange(index, optionIndex, e.target.value)
+                    }
+                    sx={{ mb: 1 }}
+                  />
+                ))}
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                  <InputLabel>Réponse correcte</InputLabel>
+                  <Select
+                    value={question.correctAnswer}
+                    onChange={(e) =>
+                      handleQuestionChange(
+                        index,
+                        "correctAnswer",
+                        e.target.value
+                      )
+                    }
+                  >
+                    {question.options.map((option, optionIndex) => (
+                      <MenuItem key={optionIndex} value={option}>
+                        {option}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                  <IconButton onClick={() => handleRemoveQuestion(index)}>
+                    <RemoveCircleOutlineIcon />
+                  </IconButton>
+                </Box>
+              </Box>
+            ))}
+            <Button
+              variant="outlined"
+              fullWidth
+              sx={{ mb: 2 }}
+              onClick={handleAddQuestion}
+            >
+              Ajouter une Question
+            </Button>
+            <Button variant="contained" onClick={handleQuizSubmit}>
+              {currentFormation?.quizExists
+                ? "Modifier le Quiz"
+                : "Créer le Quiz"}
+            </Button>
+          </Box>
+        </Modal>
 
         {/* Modal pour modifier une formation */}
         {currentFormation && (
@@ -323,7 +528,7 @@ const MyFormations = () => {
                         }}
                         onClick={() => showUserDetailsModal(apprenant)}
                       >
-                        <EyeOutlined /> Détails
+                        Détails
                       </Button>
                     }
                   >

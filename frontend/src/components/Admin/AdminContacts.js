@@ -6,32 +6,64 @@ import {
   Grid,
   Paper,
   CircularProgress,
+  IconButton,
 } from "@mui/material";
+import { Pagination, Popconfirm, message } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 import axios from "axios";
 import Sidebar from "../navbar/Sidebar";
 
 const AdminContacts = () => {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1); // Current page for pagination
+  const [totalPages, setTotalPages] = useState(1); // Total number of pages
 
   useEffect(() => {
-    const fetchContacts = async () => {
-      const token = localStorage.getItem("token"); // Assuming admin token is stored in localStorage
+    fetchContacts(page);
+  }, [page]);
 
-      try {
-        const res = await axios.get("http://localhost:5000/api/contact/all", {
+  const fetchContacts = async (currentPage) => {
+    const token = localStorage.getItem("token"); // Assuming admin token is stored in localStorage
+
+    try {
+      const res = await axios.get(
+        `http://localhost:5000/api/contact/all?page=${currentPage}`,
+        {
           headers: { "x-auth-token": token },
-        });
-        setContacts(res.data);
-        setLoading(false);
-      } catch (error) {
-        console.error("Erreur lors de la récupération des contacts:", error);
-        setLoading(false);
-      }
-    };
+        }
+      );
+      setContacts(res.data.contacts);
+      setTotalPages(res.data.totalPages); // Set total pages from the response
+      setLoading(false);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des contacts:", error);
+      setLoading(false);
+    }
+  };
 
-    fetchContacts();
-  }, []);
+  const handleDelete = async (contactId) => {
+    const token = localStorage.getItem("token");
+
+    try {
+      await axios.delete(
+        `http://localhost:5000/api/contact/delete/${contactId}`,
+        {
+          headers: { "x-auth-token": token },
+        }
+      );
+      setContacts((prevContacts) =>
+        prevContacts.filter((contact) => contact._id !== contactId)
+      );
+      message.success("Message de contact supprimé avec succès.");
+    } catch (error) {
+      console.error(
+        "Erreur lors de la suppression du message de contact:",
+        error
+      );
+      message.error("Erreur lors de la suppression du message de contact.");
+    }
+  };
 
   if (loading) {
     return (
@@ -64,25 +96,50 @@ const AdminContacts = () => {
             {contacts.map((contact) => (
               <Grid item xs={12} key={contact._id}>
                 <Paper sx={{ p: 3 }}>
-                  <Typography variant="h6">{contact.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {contact.email}
-                  </Typography>
-                  <Typography variant="body1" sx={{ mt: 2 }}>
-                    {contact.message}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    display="block"
-                    sx={{ mt: 1, color: "text.secondary" }}
+                  <Box
+                    sx={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    Reçu le: {new Date(contact.date).toLocaleString()}
-                  </Typography>
+                    <Box>
+                      <Typography variant="h6">{contact.name}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {contact.email}
+                      </Typography>
+                      <Typography variant="body1" sx={{ mt: 2 }}>
+                        {contact.message}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        display="block"
+                        sx={{ mt: 1, color: "text.secondary" }}
+                      >
+                        Reçu le: {new Date(contact.date).toLocaleString()}
+                      </Typography>
+                    </Box>
+                    <Popconfirm
+                      title="Êtes-vous sûr de vouloir supprimer ce message de contact?"
+                      onConfirm={() => handleDelete(contact._id)}
+                      okText="Oui"
+                      cancelText="Non"
+                    >
+                      <IconButton color="error">
+                        <DeleteOutlined />
+                      </IconButton>
+                    </Popconfirm>
+                  </Box>
                 </Paper>
               </Grid>
             ))}
           </Grid>
         )}
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <Pagination
+            current={page}
+            total={totalPages * 10}
+            onChange={(page) => setPage(page)}
+            showSizeChanger={false}
+            style={{ marginTop: 20 }}
+          />
+        </Box>
       </Container>
     </Box>
   );

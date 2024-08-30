@@ -28,6 +28,7 @@ import {
   Wifi as WifiIcon,
   AssignmentTurnedIn as AssignmentTurnedInIcon,
 } from "@mui/icons-material"; // Material-UI icons
+import ScoreIcon from "@mui/icons-material/Score";
 import BeenhereIcon from "@mui/icons-material/Beenhere";
 import { Table, Button, message, Badge, Modal, List as AntList } from "antd";
 import axios from "axios";
@@ -393,6 +394,37 @@ const Sidebar = ({ role }) => {
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
                     Mes Formations
+                  </Typography>
+                )}
+              </ListItem>
+              <ListItem button component={Link} to="/formateur/videos">
+                <ListItemIcon sx={{ color: "white" }}>
+                  <AssignmentTurnedInIcon />
+                </ListItemIcon>
+                {open && (
+                  <Typography variant="body1" sx={{ color: "white" }}>
+                    Mes vidéos
+                  </Typography>
+                )}
+              </ListItem>
+
+              {/* <ListItem button component={Link} to="/formateur/scores">
+                <ListItemIcon sx={{ color: "white" }}>
+                  <ScoreIcon />
+                </ListItemIcon>
+                {open && (
+                  <Typography variant="body1" sx={{ color: "white" }}>
+                    Consulter les scores
+                  </Typography>
+                )}
+              </ListItem> */}
+              <ListItem button component={Link} to="/formateur/quizs">
+                <ListItemIcon sx={{ color: "white" }}>
+                  <ScoreIcon />
+                </ListItemIcon>
+                {open && (
+                  <Typography variant="body1" sx={{ color: "white" }}>
+                    Consulter les quizs
                   </Typography>
                 )}
               </ListItem>

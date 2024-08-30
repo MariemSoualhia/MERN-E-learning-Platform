@@ -46,13 +46,43 @@ router.post("/submit", async (req, res) => {
   }
 });
 // Get all contact messages (only accessible by admin)
+// Get all contact messages with pagination (only accessible by admin)
 router.get("/all", async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 5; // Number of contacts per page
+  const skip = (page - 1) * limit;
+
   try {
-    const contacts = await Contact.find().sort({ date: -1 }); // Fetch contacts sorted by date (most recent first)
-    res.status(200).json(contacts);
+    const totalContacts = await Contact.countDocuments();
+    const contacts = await Contact.find()
+      .sort({ date: -1 }) // Most recent first
+      .skip(skip)
+      .limit(limit);
+
+    res.status(200).json({
+      contacts,
+      totalPages: Math.ceil(totalContacts / limit),
+    });
   } catch (error) {
     console.error("Error fetching contact messages:", error.message);
     res.status(500).json({ error: "Erreur du serveur." });
   }
 });
+
+// Delete a contact message by ID
+router.delete("/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Contact.findByIdAndDelete(id);
+    res
+      .status(200)
+      .json({ message: "Message de contact supprimé avec succès." });
+  } catch (error) {
+    console.error("Error deleting contact message:", error.message);
+    res
+      .status(500)
+      .json({ error: "Erreur du serveur lors de la suppression du message." });
+  }
+});
+
 module.exports = router;

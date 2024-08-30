@@ -12,7 +12,7 @@ const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const formationRoutes = require("./routes/formation");
 const contactRoutes = require("./routes/contact");
-
+const quizRoutes = require("./routes/quiz");
 const socket = require("./socket");
 require("dotenv").config();
 
@@ -70,6 +70,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/formations", formationRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/quiz", quizRoutes);
 
 app.get("/static-images/:filename", (req, res) => {
   const filename = req.params.filename;

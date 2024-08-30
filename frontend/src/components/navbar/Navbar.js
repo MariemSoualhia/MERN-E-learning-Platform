@@ -22,7 +22,7 @@ const Navbar = () => {
           À propos
         </Button>
         <Button color="inherit" component={Link} to="/contact">
-          Contactez-nous
+          Contact
         </Button>
         <Button color="inherit" component={Link} to="/login">
           Connexion

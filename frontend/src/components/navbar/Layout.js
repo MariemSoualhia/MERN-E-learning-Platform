@@ -21,6 +21,9 @@ const Layout = ({ children }) => {
     "/apprenant/my-enrollments",
     "/admin/enrollments",
     "/admin/contacts",
+    "/formateur/scores",
+    "/formateur/quizs",
+    "/formateur/videos",
   ];
 
   const shouldHideNavbar =

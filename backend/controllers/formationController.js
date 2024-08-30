@@ -265,8 +265,17 @@ exports.getActiveFormations = async (req, res) => {
 // Récupérer les formations d'un formateur
 exports.getMyFormations = async (req, res) => {
   try {
-    const formations = await Formation.find({ formateur: req.user.id });
-    res.json(formations);
+    const formations = await Formation.find({
+      formateur: req.user.id,
+    }).populate("quiz");
+    const formationsWithQuizFlag = formations.map((formation) => {
+      return {
+        ...formation.toObject(),
+        quizExists: formation.quiz ? true : false,
+      };
+    });
+
+    res.json(formationsWithQuizFlag);
   } catch (error) {
     console.error(error.message);
     res.status(500).send("Server error");
@@ -1075,5 +1084,71 @@ exports.getApprenantDashboardStats = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send("Erreur du serveur.");
+  }
+};
+
+exports.uploadVideo = async (req, res) => {
+  const { formationId } = req.params;
+  const { url, title } = req.body;
+
+  try {
+    const formation = await Formation.findById(formationId);
+
+    if (!formation) {
+      return res.status(404).json({ message: "Formation not found" });
+    }
+
+    formation.videos.push({ url, title });
+    await formation.save();
+
+    res.status(200).json({
+      message: "Video uploaded successfully",
+      videos: formation.videos,
+    });
+  } catch (error) {
+    console.error("Error uploading video:", error);
+    res.status(500).json({ message: "Server error while uploading video" });
+  }
+};
+
+exports.getVideos = async (req, res) => {
+  const { formationId } = req.params;
+
+  try {
+    const formation = await Formation.findById(formationId);
+
+    if (!formation) {
+      return res.status(404).json({ message: "Formation not found" });
+    }
+
+    res.status(200).json({ videos: formation.videos });
+  } catch (error) {
+    console.error("Error fetching videos:", error);
+    res.status(500).json({ message: "Server error while fetching videos" });
+  }
+};
+
+exports.deleteVideo = async (req, res) => {
+  const { formationId, videoId } = req.params;
+
+  try {
+    const formation = await Formation.findById(formationId);
+
+    if (!formation) {
+      return res.status(404).json({ message: "Formation not found" });
+    }
+
+    formation.videos = formation.videos.filter(
+      (video) => video._id.toString() !== videoId
+    );
+    await formation.save();
+
+    res.status(200).json({
+      message: "Video deleted successfully",
+      videos: formation.videos,
+    });
+  } catch (error) {
+    console.error("Error deleting video:", error);
+    res.status(500).json({ message: "Server error while deleting video" });
   }
 };
