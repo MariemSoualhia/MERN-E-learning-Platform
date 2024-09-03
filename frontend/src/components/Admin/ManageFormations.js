@@ -13,6 +13,7 @@ import {
   InputNumber,
   Upload,
   Descriptions,
+  List,
 } from "antd";
 import {
   PlusOutlined,
@@ -20,7 +21,9 @@ import {
   DeleteOutlined,
   UploadOutlined,
   InfoCircleOutlined,
-  ReloadOutlined, // Add Reload Icon
+  ReloadOutlined,
+  VideoCameraOutlined,
+  QuestionCircleOutlined,
 } from "@ant-design/icons";
 import { Container, Box, Typography } from "@mui/material";
 import axios from "axios";
@@ -28,8 +31,10 @@ import Sidebar from "../navbar/Sidebar";
 import styled from "styled-components";
 import moment from "moment";
 import theme from "../../theme";
+
 const { Option } = Select;
 const { RangePicker } = DatePicker;
+
 const StyledForm = styled(Form)`
   .ant-form-item-label > label {
     color: ${theme.palette.text.primary};
@@ -64,22 +69,28 @@ const StyledForm = styled(Form)`
 const ManageFormations = () => {
   const [formations, setFormations] = useState([]);
   const [filteredFormations, setFilteredFormations] = useState([]);
-  const [formateurs, setFormateurs] = useState([]); // List of formateurs
-  const [filteredFormateurs, setFilteredFormateurs] = useState([]); // List of formateurs filtered by specialty
+  const [formateurs, setFormateurs] = useState([]);
+  const [filteredFormateurs, setFilteredFormateurs] = useState([]);
   const [selectedFormation, setSelectedFormation] = useState(null);
-  const [selectedFormateur, setSelectedFormateur] = useState(null); // State for selected formateur details
+  const [selectedFormateur, setSelectedFormateur] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [isFormateurDetailsVisible, setIsFormateurDetailsVisible] =
-    useState(false); // Modal visibility for formateur details
+    useState(false);
+  const [isVideoModalVisible, setIsVideoModalVisible] = useState(false);
+  const [isQuizModalVisible, setIsQuizModalVisible] = useState(false);
   const [filters, setFilters] = useState({ status: "", specialty: "" });
-  const [file, setFile] = useState(null); // State to handle the image file
+  const [file, setFile] = useState(null);
+  const [videos, setVideos] = useState([]);
+  const [videoFilter, setVideoFilter] = useState("");
+  const [quizzes, setQuizzes] = useState(null);
+  const [quizFilter, setQuizFilter] = useState("");
 
   const [form] = Form.useForm();
 
   useEffect(() => {
     fetchFormations();
-    fetchFormateurs(); // Fetch the list of formateurs
+    fetchFormateurs();
   }, []);
 
   const fetchFormations = async () => {
@@ -133,6 +144,47 @@ const ManageFormations = () => {
     }
   };
 
+  const fetchVideos = async (formation) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/api/formations/videos/${formation._id}`,
+        {
+          headers: {
+            "x-auth-token": token,
+          },
+        }
+      );
+      setSelectedFormation(formation);
+      setVideos(response.data.videos);
+      setIsVideoModalVisible(true);
+    } catch (error) {
+      message.error("Erreur lors de la récupération des vidéos");
+      console.error(error);
+    }
+  };
+
+  const fetchQuizzes = async (formation) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/api/quiz/formation/${formation._id}`,
+        {
+          headers: {
+            "x-auth-token": token,
+          },
+        }
+      );
+      setSelectedFormation(formation);
+      setQuizzes(response.data); // Set the quiz data directly
+
+      setIsQuizModalVisible(true);
+    } catch (error) {
+      message.error("Erreur lors de la récupération des quiz");
+      console.error(error);
+    }
+  };
+
   const handleFilterChange = (changedFilters) => {
     setFilters((prevFilters) => ({ ...prevFilters, ...changedFilters }));
 
@@ -149,13 +201,10 @@ const ManageFormations = () => {
   };
 
   const handleSpecialtyChange = (value) => {
-    // Filter formateurs based on selected specialty
     const filtered = formateurs.filter(
       (formateur) => formateur.specialty === value
     );
     setFilteredFormateurs(filtered);
-
-    // Reset the formateur field in the form if the specialty changes
     form.setFieldsValue({ formateur: null });
   };
 
@@ -167,14 +216,14 @@ const ManageFormations = () => {
     setSelectedFormation(null);
     setIsEdit(false);
     setIsModalVisible(true);
-    setFilteredFormateurs([]); // Clear filtered formateurs when adding a new formation
+    setFilteredFormateurs([]);
   };
 
   const handleEdit = (formation) => {
     setSelectedFormation(formation);
     setIsEdit(true);
     setIsModalVisible(true);
-    handleSpecialtyChange(formation.specialty); // Filter formateurs based on the specialty of the selected formation
+    handleSpecialtyChange(formation.specialty);
     form.setFieldsValue({
       title: formation.title,
       description: formation.description,
@@ -223,12 +272,10 @@ const ManageFormations = () => {
     formData.append("status", rest.status);
     formData.append("formateur", rest.formateur);
 
-    // Check if file exists before appending
     if (file) {
       formData.append("image", file);
     }
 
-    // Determine URL and method based on edit mode
     const url = isEdit
       ? `http://localhost:5000/api/formations/${selectedFormation._id}`
       : "http://localhost:5000/api/formations/add";
@@ -247,8 +294,8 @@ const ManageFormations = () => {
           ? "Formation mise à jour avec succès"
           : "Formation ajoutée avec succès"
       );
-      fetchFormations(); // Refresh formations list
-      setIsModalVisible(false); // Close modal after success
+      fetchFormations();
+      setIsModalVisible(false);
     } catch (error) {
       if (error.response && error.response.status === 403) {
         message.error(
@@ -262,15 +309,45 @@ const ManageFormations = () => {
   };
 
   const handleRefresh = () => {
-    // Reset the filters state
     setFilters({ status: "", specialty: "" });
-
-    // Reset the form values for the filter form
     form.resetFields();
-
-    // Fetch the full list of formations again
     fetchFormations();
   };
+
+  const handleVideoDelete = async (videoId) => {
+    const token = localStorage.getItem("token");
+    try {
+      await axios.delete(
+        `http://localhost:5000/api/formations/videos/${selectedFormation._id}/${videoId}`,
+        {
+          headers: { "x-auth-token": token },
+        }
+      );
+      message.success("Vidéo supprimée avec succès");
+      fetchVideos(selectedFormation._id);
+    } catch (error) {
+      message.error("Erreur lors de la suppression de la vidéo");
+      console.error(error);
+    }
+  };
+
+  const handleQuizDelete = async (quizId) => {
+    const token = localStorage.getItem("token");
+    try {
+      await axios.delete(`http://localhost:5000/api/quiz/delete/${quizId}`, {
+        headers: { "x-auth-token": token },
+      });
+      message.success("Quiz supprimé avec succès");
+      fetchQuizzes(selectedFormation._id);
+    } catch (error) {
+      message.error("Erreur lors de la suppression du quiz");
+      console.error(error);
+    }
+  };
+
+  const filteredVideos = videos.filter((video) =>
+    video.title.toLowerCase().includes(videoFilter.toLowerCase())
+  );
 
   const columns = [
     {
@@ -285,7 +362,7 @@ const ManageFormations = () => {
     },
     {
       title: "Formateur",
-      dataIndex: ["formateur", "name"], // Assuming formateur has a name field
+      dataIndex: ["formateur", "name"],
       key: "formateur",
     },
     {
@@ -321,14 +398,33 @@ const ManageFormations = () => {
             <Button
               icon={<DeleteOutlined />}
               type="danger"
-              style={{
-                backgroundColor: "#FF4D4F",
-                color: "#FFFFFF",
-              }}
+              style={{ backgroundColor: "#FF4D4F", color: "#FFFFFF" }}
             >
               Supprimer
             </Button>
           </Popconfirm>
+          <Button
+            icon={<VideoCameraOutlined />}
+            onClick={() => fetchVideos(record)}
+            style={{
+              backgroundColor: "#4CAF50",
+              color: "#FFFFFF",
+              marginLeft: 8,
+            }}
+          >
+            Voir les Vidéos
+          </Button>
+          <Button
+            icon={<QuestionCircleOutlined />}
+            onClick={() => fetchQuizzes(record)}
+            style={{
+              backgroundColor: "#FFC107",
+              color: "#FFFFFF",
+              marginLeft: 8,
+            }}
+          >
+            Voir les Quiz
+          </Button>
           <Button
             icon={<InfoCircleOutlined />}
             onClick={() => fetchFormateurDetails(record.formateur._id)}
@@ -376,10 +472,7 @@ const ManageFormations = () => {
               <Form.Item name="specialty" label="Filtrer par spécialité">
                 <Select
                   placeholder="Sélectionnez la spécialité"
-                  onChange={(value) => {
-                    handleSpecialtyChange(value);
-                    handleFilterChange({ specialty: value });
-                  }}
+                  onChange={(value) => handleSpecialtyChange(value)}
                   allowClear
                 >
                   <Option value="dev">Dev</Option>
@@ -404,10 +497,7 @@ const ManageFormations = () => {
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={handleAdd}
-                style={{
-                  backgroundColor: "#1E3A8A",
-                  borderColor: "#1E3A8A",
-                }}
+                style={{ backgroundColor: "#1E3A8A", borderColor: "#1E3A8A" }}
               >
                 Ajouter une formation
               </Button>
@@ -459,7 +549,7 @@ const ManageFormations = () => {
             >
               <Select
                 placeholder="Sélectionnez la spécialité"
-                onChange={handleSpecialtyChange} // Filter formateurs based on selected specialty
+                onChange={handleSpecialtyChange}
               >
                 <Option value="dev">Dev</Option>
                 <Option value="réseau">Réseau</Option>
@@ -469,7 +559,7 @@ const ManageFormations = () => {
             <Form.Item
               name="formateur"
               label="Formateur"
-              initialValue={selectedFormation?.formateur?._id} // Assuming formateur has an _id
+              initialValue={selectedFormation?.formateur?._id}
               rules={[
                 {
                   required: true,
@@ -480,7 +570,7 @@ const ManageFormations = () => {
               <Select placeholder="Sélectionnez le formateur">
                 {filteredFormateurs.map((formateur) => (
                   <Option key={formateur._id} value={formateur._id}>
-                    {formateur.name} {/* Assuming formateur has a name */}
+                    {formateur.name}
                   </Option>
                 ))}
               </Select>
@@ -533,7 +623,7 @@ const ManageFormations = () => {
               <Select placeholder="Sélectionnez le statut">
                 <Option value="active">Active</Option>
                 <Option value="en attente">En attente</Option>
-                <Option value="rejected">Rejected</Option>
+                <Option value="rejetée">Rejetée</Option>
               </Select>
             </Form.Item>
             <Form.Item>
@@ -549,7 +639,7 @@ const ManageFormations = () => {
           visible={isFormateurDetailsVisible}
           onCancel={() => setIsFormateurDetailsVisible(false)}
           footer={null}
-          width={700} // Increase the width of the modal for better layout
+          width={700}
         >
           {selectedFormateur ? (
             <Descriptions bordered column={2}>
@@ -594,6 +684,89 @@ const ManageFormations = () => {
             </Descriptions>
           ) : (
             <p>Aucun détail disponible pour ce formateur.</p>
+          )}
+        </Modal>
+
+        <Modal
+          title="Vidéos de la Formation"
+          visible={isVideoModalVisible}
+          onCancel={() => setIsVideoModalVisible(false)}
+          footer={null}
+          width={800}
+        >
+          <Input
+            placeholder="Filtrer par titre de la vidéo"
+            value={videoFilter}
+            onChange={(e) => setVideoFilter(e.target.value)}
+            style={{ marginBottom: 16 }}
+          />
+          <List
+            dataSource={filteredVideos}
+            renderItem={(video, index) => (
+              <List.Item
+                actions={[
+                  <Button
+                    icon={<DeleteOutlined />}
+                    onClick={() => handleVideoDelete(video._id)}
+                    type="danger"
+                  >
+                    Supprimer
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta title={video.title} />
+                <video
+                  width="100%"
+                  height="300px"
+                  controls
+                  crossOrigin="anonymous"
+                  style={{ borderRadius: 8 }}
+                >
+                  <source
+                    src={`http://localhost:5000/api/formations/videos/serve/${selectedFormation?._id}/${index}`}
+                    type="video/mp4"
+                  />
+                  Your browser does not support the video tag.
+                </video>
+              </List.Item>
+            )}
+          />
+        </Modal>
+
+        <Modal
+          title="Quiz de la Formation"
+          visible={isQuizModalVisible}
+          onCancel={() => setIsQuizModalVisible(false)}
+          footer={null}
+          width={800}
+        >
+          {quizzes ? (
+            <Box>
+              <Typography variant="h5" gutterBottom>
+                {quizzes.title}
+              </Typography>
+              <List>
+                {quizzes.questions.map((question, index) => (
+                  <List.Item key={index}>
+                    <List.Item.Meta
+                      title={`Question ${index + 1}: ${question.questionText}`}
+                    />
+                  </List.Item>
+                ))}
+              </List>
+              <Button
+                icon={<DeleteOutlined />}
+                onClick={() => handleQuizDelete(quizzes._id)}
+                type="danger"
+                style={{ marginTop: 16 }}
+              >
+                Supprimer le Quiz
+              </Button>
+            </Box>
+          ) : (
+            <Typography variant="body1">
+              Aucun quiz disponible pour cette formation.
+            </Typography>
           )}
         </Modal>
       </Container>

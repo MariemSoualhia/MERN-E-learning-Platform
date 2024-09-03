@@ -24,6 +24,7 @@ const Layout = ({ children }) => {
     "/formateur/scores",
     "/formateur/quizs",
     "/formateur/videos",
+    "/apprenant/myVideos",
   ];
 
   const shouldHideNavbar =

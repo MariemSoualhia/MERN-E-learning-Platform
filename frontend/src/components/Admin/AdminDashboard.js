@@ -58,6 +58,9 @@ const AdminDashboard = () => {
     enrollmentStatusCounts: [],
     apprenantsByFormation: [],
     apprenantsByFormateur: [],
+    totalQuizzes: 0,
+    totalQuizSubmissions: 0,
+    averageQuizScore: 0,
   });
   const [topFormations, setTopFormations] = useState([]);
 
@@ -83,7 +86,7 @@ const AdminDashboard = () => {
   }, []);
 
   useEffect(() => {
-    const fetchStats2 = async () => {
+    const fetchTopFormations = async () => {
       try {
         const token = localStorage.getItem("token");
         const topFormationsResponse = await axios.get(
@@ -100,7 +103,33 @@ const AdminDashboard = () => {
       }
     };
 
-    fetchStats2();
+    fetchTopFormations();
+  }, []);
+
+  useEffect(() => {
+    const fetchQuizStats = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          "http://localhost:5000/api/quiz/stats",
+          {
+            headers: {
+              "x-auth-token": token,
+            },
+          }
+        );
+        setStats((prevStats) => ({
+          ...prevStats,
+          totalQuizzes: response.data.totalQuizzes,
+          totalQuizSubmissions: response.data.totalQuizSubmissions,
+          averageQuizScore: response.data.averageScore,
+        }));
+      } catch (error) {
+        console.error("Failed to fetch quiz statistics:", error);
+      }
+    };
+
+    fetchQuizStats();
   }, []);
 
   const formationStatusData = stats.formationStatusCounts.map((item) => ({
@@ -185,7 +214,35 @@ const AdminDashboard = () => {
             </Paper>
           </Grid>
 
-          {/* Répartition des Formations par Statut and Spécialité on the same line */}
+          {/* Statistiques des quiz */}
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">Total des Quiz</Typography>
+              <Typography className={classes.statText}>
+                {stats.totalQuizzes}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">
+                Total des Soumissions de Quiz
+              </Typography>
+              <Typography className={classes.statText}>
+                {stats.totalQuizSubmissions}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">Score Moyen des Quiz</Typography>
+              <Typography className={classes.statText}>
+                {stats.averageQuizScore ? stats.averageQuizScore.toFixed(2) : "N/A"}
+              </Typography>
+            </Paper>
+          </Grid>
+
+          {/* Répartition des Formations par Statut and Spécialité */}
           <Grid item xs={12} sm={6} md={6}>
             <Paper className={classes.card}>
               <Typography variant="h6">
@@ -249,7 +306,7 @@ const AdminDashboard = () => {
             </Paper>
           </Grid>
 
-          {/* Top 5 Formations and Statut des Inscriptions on the same line */}
+          {/* Top 5 Formations et Statut des Inscriptions */}
           <Grid item xs={12} sm={6} md={6}>
             <Paper className={classes.card}>
               <Typography variant="h6">
@@ -300,7 +357,7 @@ const AdminDashboard = () => {
             </Paper>
           </Grid>
 
-          {/* Nombre d'Apprenants par Formation and Nombre d'Apprenants par Formateur on the same line */}
+          {/* Nombre d'Apprenants par Formation et par Formateur */}
           <Grid item xs={12} sm={6} md={6}>
             <Paper className={classes.card}>
               <Typography variant="h6">

@@ -1,4 +1,6 @@
 const express = require("express");
+const upload = require("../config/multerConfig"); // Import multer configuration
+
 const router = express.Router();
 const {
   addFormation,
@@ -34,7 +36,9 @@ const {
   uploadVideo,
   getVideos,
   deleteVideo,
+  serveVideo,
 } = require("../controllers/formationController");
+
 const auth = require("../middleware/auth");
 const { isAdmin, isFormateur } = require("../middleware/roles");
 
@@ -144,7 +148,8 @@ router.post(
   sendEmailToApprenants
 );
 router.delete("/enrollment/:enrollmentId", auth, isAdmin, deleteEnrollment);
-router.post("/videos/upload/:formationId", uploadVideo); // Route to upload video
+router.post("/videos/upload/:formationId", upload.single("video"), uploadVideo); // Route to upload video
 router.get("/videos/:formationId", getVideos); // Route to get all videos for a formation
+router.get("/videos/serve/:formationId/:videoIndex", serveVideo);
 router.delete("/videos/:formationId/:videoId", deleteVideo); // Route to delete a video
 module.exports = router;

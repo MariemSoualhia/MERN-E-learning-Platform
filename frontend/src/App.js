@@ -37,6 +37,7 @@ import AdminContacts from "./components/Admin/AdminContacts";
 import LearnerScores from "./components/Formateur/LearnerScores";
 import QuizManagement from "./components/Formateur/QuizManagement";
 import VideoManagement from "./components/Formateur/VideoManagement";
+import MyFormationVideos from "./components/Apprenant/MyFormationVideos";
 const App = () => {
   return (
     <ThemeProvider theme={theme}>
@@ -146,6 +147,14 @@ const App = () => {
               element={
                 <PrivateRoute>
                   <MyEnrollments />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/apprenant/myVideos"
+              element={
+                <PrivateRoute>
+                  <MyFormationVideos />
                 </PrivateRoute>
               }
             />

@@ -14,17 +14,24 @@ import {
   ListItemText,
   Divider,
 } from "@mui/material";
-import { DeleteOutlined, UploadOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  UploadOutlined,
+  Close as CloseIcon,
+} from "@mui/icons-material";
 import { message } from "antd";
 import axios from "axios";
 import Sidebar from "../navbar/Sidebar";
+import theme from "../../theme"; // Import the custom theme
 
 const VideoManagement = () => {
   const [formations, setFormations] = useState([]);
   const [currentFormation, setCurrentFormation] = useState(null);
   const [videos, setVideos] = useState([]);
   const [videoVisible, setVideoVisible] = useState(false);
-  const [newVideo, setNewVideo] = useState({ url: "", title: "" });
+  const [newVideo, setNewVideo] = useState({ file: null, title: "" });
+  const [currentPage, setCurrentPage] = useState(1);
+  const videosPerPage = 4;
 
   useEffect(() => {
     fetchFormations();
@@ -66,23 +73,29 @@ const VideoManagement = () => {
   };
 
   const handleVideoSubmit = async () => {
-    const { url, title } = newVideo;
-    if (!url || !title) {
+    if (!newVideo.file || !newVideo.title) {
       message.error("Veuillez remplir tous les champs.");
       return;
     }
 
+    const formData = new FormData();
+    formData.append("video", newVideo.file);
+    formData.append("title", newVideo.title);
+
     try {
       await axios.post(
         `http://localhost:5000/api/formations/videos/upload/${currentFormation._id}`,
-        { url, title },
+        formData,
         {
-          headers: { "x-auth-token": localStorage.getItem("token") },
+          headers: {
+            "x-auth-token": localStorage.getItem("token"),
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
       message.success("Vidéo téléchargée avec succès !");
       fetchVideos(currentFormation._id);
-      setNewVideo({ url: "", title: "" });
+      setNewVideo({ file: null, title: "" });
     } catch (error) {
       console.error(error);
       message.error("Erreur lors du téléchargement de la vidéo.");
@@ -105,10 +118,30 @@ const VideoManagement = () => {
     }
   };
 
+  const handleCloseModal = () => {
+    setVideoVisible(false);
+    setCurrentPage(1); // Reset to the first page when closing
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+  // Paginate videos
+  const indexOfLastVideo = currentPage * videosPerPage;
+  const indexOfFirstVideo = indexOfLastVideo - videosPerPage;
+  const currentVideos = videos.slice(indexOfFirstVideo, indexOfLastVideo);
+
   return (
     <Box sx={{ marginTop: "50px", display: "flex", minHeight: "100vh" }}>
       <Sidebar role="formateur" />
-      <Container sx={{ padding: 3, backgroundColor: "#F1F1F1", width: "100%" }}>
+      <Container
+        sx={{
+          padding: 3,
+          backgroundColor: theme.palette.background.default,
+          width: "100%",
+        }}
+      >
         <Typography variant="h2" gutterBottom>
           Gestion des Vidéos
         </Typography>
@@ -136,7 +169,7 @@ const VideoManagement = () => {
 
         <Modal
           open={videoVisible}
-          onClose={() => setVideoVisible(false)}
+          onClose={handleCloseModal}
           sx={{
             display: "flex",
             alignItems: "center",
@@ -148,28 +181,82 @@ const VideoManagement = () => {
           <Box
             sx={{
               backgroundColor: "white",
-              padding: 3,
+              padding: 4,
               borderRadius: 2,
+              width: "80vw",
               maxHeight: "80vh",
               overflowY: "auto",
+              position: "relative",
             }}
           >
-            <Typography variant="h4" gutterBottom>
+            <IconButton
+              onClick={handleCloseModal}
+              sx={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                color: theme.palette.primary.main,
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+            <Typography variant="h4" gutterBottom sx={{ textAlign: "center" }}>
               Vidéos pour {currentFormation?.title}
             </Typography>
-            <List>
-              {videos.map((video) => (
-                <ListItem key={video._id}>
-                  <ListItemText primary={video.title} secondary={video.url} />
+            <Divider sx={{ mb: 3 }} />
+
+            <Grid container spacing={3}>
+              {currentVideos.map((video, index) => (
+                <Grid item xs={12} sm={6} key={video._id}>
+                  <Typography variant="h6">{video.title}</Typography>
+                  <video
+                    width="100%"
+                    height="300px"
+                    controls
+                    crossOrigin="anonymous"
+                    style={{ borderRadius: 8 }}
+                  >
+                    <source
+                      src={`http://localhost:5000/api/formations/videos/serve/${currentFormation._id}/${index}`}
+                      type="video/mp4"
+                    />
+                    Your browser does not support the video tag.
+                  </video>
                   <IconButton
                     color="error"
                     onClick={() => handleDeleteVideo(video._id)}
+                    sx={{ mt: 1 }}
                   >
                     <DeleteOutlined />
                   </IconButton>
-                </ListItem>
+                </Grid>
               ))}
-            </List>
+            </Grid>
+
+            {/* Pagination controls */}
+            {videos.length > videosPerPage && (
+              <Box sx={{ textAlign: "center", mt: 3 }}>
+                {[...Array(Math.ceil(videos.length / videosPerPage))].map(
+                  (e, i) => (
+                    <Button
+                      key={i}
+                      variant="contained"
+                      sx={{
+                        margin: "0 5px",
+                        backgroundColor:
+                          currentPage === i + 1
+                            ? theme.palette.primary.main
+                            : theme.palette.secondary.main,
+                      }}
+                      onClick={() => handlePageChange(i + 1)}
+                    >
+                      {i + 1}
+                    </Button>
+                  )
+                )}
+              </Box>
+            )}
+
             <Divider sx={{ my: 2 }} />
             <TextField
               label="Titre de la vidéo"
@@ -180,14 +267,13 @@ const VideoManagement = () => {
               }
               sx={{ mb: 2 }}
             />
-            <TextField
-              label="URL de la vidéo"
-              fullWidth
-              value={newVideo.url}
+            <input
+              type="file"
+              accept="video/*"
               onChange={(e) =>
-                setNewVideo((prev) => ({ ...prev, url: e.target.value }))
+                setNewVideo((prev) => ({ ...prev, file: e.target.files[0] }))
               }
-              sx={{ mb: 2 }}
+              style={{ display: "block", marginBottom: "16px" }}
             />
             <Button
               variant="contained"

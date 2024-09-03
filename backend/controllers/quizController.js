@@ -195,3 +195,71 @@ exports.deleteQuiz = async (req, res) => {
     res.status(500).json({ message: "Server error while deleting quiz" });
   }
 };
+exports.getQuizStats = async (req, res) => {
+  try {
+    // Récupérer le nombre total de quiz
+    const totalQuizzes = await Quiz.countDocuments();
+
+    // Récupérer le nombre total de soumissions de quiz
+    const totalQuizSubmissions = await QuizSubmission.countDocuments();
+
+    // Calculer la moyenne des scores pour tous les quiz
+    const averageScore = await QuizSubmission.aggregate([
+      {
+        $group: {
+          _id: null,
+          averageScore: { $avg: "$score" },
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      totalQuizzes,
+      totalQuizSubmissions,
+      averageScore: averageScore.length ? averageScore[0].averageScore : 0,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+    console.log(error);
+  }
+};
+exports.getFormateurQuizStats = async (req, res) => {
+  try {
+    const formateurId = req.user.id; 
+
+   
+    const formations = await Formation.find({ formateur: formateurId });
+    const formationIds = formations.map((formation) => formation._id);
+
+    // Récupérer tous les quiz associés à ces formations
+    const quizzes = await Quiz.find({ formation: { $in: formationIds } });
+    const quizIds = quizzes.map((quiz) => quiz._id);
+
+    // Calculer le nombre total de quiz
+    const totalQuizzes = quizzes.length;
+
+    // Calculer le nombre total de soumissions de quiz
+    const quizSubmissions = await QuizSubmission.find({
+      formation: { $in: formationIds },
+    });
+    const totalQuizSubmissions = quizSubmissions.length;
+
+    // Calculer le score moyen des soumissions de quiz
+    const totalScore = quizSubmissions.reduce(
+      (acc, submission) => acc + submission.score,
+      0
+    );
+    const averageQuizScore =
+      totalQuizSubmissions > 0 ? totalScore / totalQuizSubmissions : 0;
+
+    // Répondre avec les statistiques calculées
+    res.status(200).json({
+      totalQuizzes,
+      totalQuizSubmissions,
+      averageQuizScore,
+    });
+  } catch (error) {
+    console.error("Erreur lors de la récupération des statistiques de quiz :", error);
+    res.status(500).json({ message: "Erreur du serveur" });
+  }
+};

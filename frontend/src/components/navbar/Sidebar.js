@@ -28,8 +28,10 @@ import {
   Wifi as WifiIcon,
   AssignmentTurnedIn as AssignmentTurnedInIcon,
 } from "@mui/icons-material"; // Material-UI icons
+import OndemandVideoIcon from "@mui/icons-material/OndemandVideo";
 import ScoreIcon from "@mui/icons-material/Score";
 import BeenhereIcon from "@mui/icons-material/Beenhere";
+import VideoSettingsIcon from "@mui/icons-material/VideoSettings";
 import { Table, Button, message, Badge, Modal, List as AntList } from "antd";
 import axios from "axios";
 import io from "socket.io-client";
@@ -399,7 +401,7 @@ const Sidebar = ({ role }) => {
               </ListItem>
               <ListItem button component={Link} to="/formateur/videos">
                 <ListItemIcon sx={{ color: "white" }}>
-                  <AssignmentTurnedInIcon />
+                  <VideoSettingsIcon />
                 </ListItemIcon>
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
@@ -511,6 +513,16 @@ const Sidebar = ({ role }) => {
                 {open && (
                   <Typography variant="body1" sx={{ color: "white" }}>
                     suivre mes inscriptions
+                  </Typography>
+                )}
+              </ListItem>
+              <ListItem button component={Link} to="/apprenant/myVideos">
+                <ListItemIcon sx={{ color: "white" }}>
+                  <OndemandVideoIcon />
+                </ListItemIcon>
+                {open && (
+                  <Typography variant="body1" sx={{ color: "white" }}>
+                    suivre mes vidéos
                   </Typography>
                 )}
               </ListItem>

@@ -66,6 +66,9 @@ const FormateurDashboard = () => {
   const [completedFormations, setCompletedFormations] = useState(0);
   const [mostEnrolledFormation, setMostEnrolledFormation] = useState("");
   const [todayNewEnrollments, setTodayNewEnrollments] = useState(0);
+  const [totalQuizzes, setTotalQuizzes] = useState(0);
+  const [totalQuizSubmissions, setTotalQuizSubmissions] = useState(0);
+  const [averageQuizScore, setAverageQuizScore] = useState(0);
 
   useEffect(() => {
     const fetchStatistics = async () => {
@@ -120,12 +123,25 @@ const FormateurDashboard = () => {
           }
         );
 
+        // API call for quiz statistics
+        const quizStatsRes = await axios.get(
+          "http://localhost:5000/api/quiz/formateur-stats",
+          {
+            headers: {
+              "x-auth-token": token,
+            },
+          }
+        );
+
         setTotalFormations(totalFormationsRes.data.totalFormations);
         setTotalEnrolledStudents(totalEnrolledStudentsRes.data.totalEnrolled);
         setFormationStatusCounts(formationStatusCountsRes.data);
         setCompletedFormations(completedFormationsRes.data.completedFormations);
         setMostEnrolledFormation(mostEnrolledFormationRes.data.formationTitle);
         setTodayNewEnrollments(todayNewEnrollmentsRes.data.newEnrollments);
+        setTotalQuizzes(quizStatsRes.data.totalQuizzes);
+        setTotalQuizSubmissions(quizStatsRes.data.totalQuizSubmissions);
+        setAverageQuizScore(quizStatsRes.data.averageQuizScore);
       } catch (error) {
         console.error("Failed to fetch statistics:", error);
       }
@@ -193,6 +209,35 @@ const FormateurDashboard = () => {
               </Typography>
             </Paper>
           </Grid>
+
+          {/* Quiz Statistics Cards */}
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">Total des Quiz</Typography>
+              <Typography className={classes.statText}>
+                {totalQuizzes}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">
+                Total des Soumissions de Quiz
+              </Typography>
+              <Typography className={classes.statText}>
+                {totalQuizSubmissions}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper className={classes.card}>
+              <Typography variant="h6">Score Moyen des Quiz</Typography>
+              <Typography className={classes.statText}>
+                {averageQuizScore ? averageQuizScore.toFixed(2) : "N/A"}
+              </Typography>
+            </Paper>
+          </Grid>
+
           {/* Charts */}
           <Grid item xs={12} sm={12} md={6}>
             <Paper className={classes.chartCard}>
