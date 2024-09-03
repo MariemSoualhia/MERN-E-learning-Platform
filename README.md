@@ -16,8 +16,13 @@ Bienvenue dans le projet **E-Learning Platform**. Cette application est conçue 
 - **Gestion des Formateurs** : Ajout, modification, suppression de formateurs et de leurs formations.
 - **Ajout d'une Formation** : Possibilité pour un formateur d'ajouter une formation à la plateforme.
 - **Gestion des Formations** : Création, modification, suppression de formations par les administrateurs.
+- **Ajout de Vidéos par les Formateurs** : Les formateurs peuvent ajouter des vidéos aux formations, permettant une meilleure expérience d'apprentissage.
+- **Consultation des Vidéos par les Apprenants** : Les apprenants peuvent visionner les vidéos associées aux formations auxquelles ils sont inscrits.
 - **Suivi des Formations** : Les formateurs peuvent suivre leurs formations et gérer les inscriptions des apprenants.
 - **Inscriptions aux Formations** : Les apprenants peuvent consulter les formations disponibles, s'inscrire aux formations de leur choix et suivre leur progression.
+- **Gestion des Quiz** : Création, modification, et suppression de quiz associés aux formations.
+- **Soumission de Quiz** : Les apprenants peuvent soumettre leurs réponses aux quiz et recevoir un score.
+- **Statistiques des Quiz** : Les formateurs et les administrateurs peuvent visualiser des statistiques détaillées sur les quiz, y compris le nombre de quiz créés, les soumissions totales de quiz, et les scores moyens.
 - **Dashboard** : Tableau de bord pour les apprenants, formateurs, et administrateurs avec statistiques détaillées.
 - **Support de l'Upload d'Images** : Gestion des images pour les profils et les formations.
 - **Notifications en Temps Réel** : Notifications via socket.io pour les mises à jour en temps réel.
