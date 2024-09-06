@@ -40,7 +40,7 @@ Bienvenue dans le projet **E-Learning Platform**. Cette application est conçue 
 1. Clonez ce dépôt :
 
    ```bash
-   git clone https://github.com/votre-nom-utilisateur/e-learning-platform.git
+   git clone https://github.com/MariemSoualhia/MERN-E-learning-Platform.git
    cd e-learning-platform
    ```
 
