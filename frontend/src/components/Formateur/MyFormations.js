@@ -15,8 +15,8 @@ import {
   MenuItem,
   InputLabel,
   FormControl,
-  TextField,
   IconButton,
+  TextField,
 } from "@mui/material";
 import {
   DeleteOutlined,
@@ -325,7 +325,7 @@ const MyFormations = () => {
                     Durée: {formation.duree} heures
                   </Typography>
                   <Typography variant="body1">
-                    Prix: {formation.prix} DT
+                    Niveau: {formation.niveau}
                   </Typography>
                 </Box>
                 <Divider sx={{ my: 2 }} />

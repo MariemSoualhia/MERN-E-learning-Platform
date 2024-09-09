@@ -232,7 +232,7 @@ const ManageFormations = () => {
       status: formation.status,
       dateRange: [moment(formation.dateDebut), moment(formation.dateFin)],
       duree: formation.duree,
-      prix: formation.prix,
+      niveau: formation.niveau,
     });
   };
 
@@ -267,10 +267,11 @@ const ManageFormations = () => {
     formData.append("dateDebut", dateDebut);
     formData.append("dateFin", dateFin);
     formData.append("duree", rest.duree);
-    formData.append("prix", rest.prix);
+
     formData.append("specialty", rest.specialty);
     formData.append("status", rest.status);
     formData.append("formateur", rest.formateur);
+    formData.append("niveau", rest.niveau);
 
     if (file) {
       formData.append("image", file);
@@ -521,7 +522,6 @@ const ManageFormations = () => {
             <Form.Item
               name="title"
               label="Titre"
-              initialValue={selectedFormation?.title}
               rules={[{ required: true, message: "Veuillez entrer le titre" }]}
             >
               <Input placeholder="Titre" />
@@ -529,7 +529,6 @@ const ManageFormations = () => {
             <Form.Item
               name="description"
               label="Description"
-              initialValue={selectedFormation?.description}
               rules={[
                 { required: true, message: "Veuillez entrer la description" },
               ]}
@@ -539,7 +538,6 @@ const ManageFormations = () => {
             <Form.Item
               name="specialty"
               label="Spécialité"
-              initialValue={selectedFormation?.specialty}
               rules={[
                 {
                   required: true,
@@ -547,19 +545,31 @@ const ManageFormations = () => {
                 },
               ]}
             >
-              <Select
-                placeholder="Sélectionnez la spécialité"
-                onChange={handleSpecialtyChange}
-              >
+              <Select placeholder="Sélectionnez la spécialité">
                 <Option value="dev">Dev</Option>
                 <Option value="réseau">Réseau</Option>
                 <Option value="gestion de projets">Gestion de projets</Option>
               </Select>
             </Form.Item>
             <Form.Item
+              name="niveau"
+              label="Niveau" // Adding Niveau field
+              rules={[
+                {
+                  required: true,
+                  message: "Veuillez sélectionner le niveau",
+                },
+              ]}
+            >
+              <Select placeholder="Sélectionnez le niveau">
+                <Option value="débutant">Débutant</Option>
+                <Option value="intermédiaire">Intermédiaire</Option>
+                <Option value="avancé">Avancé</Option>
+              </Select>
+            </Form.Item>
+            <Form.Item
               name="formateur"
               label="Formateur"
-              initialValue={selectedFormation?.formateur?._id}
               rules={[
                 {
                   required: true,
@@ -590,41 +600,6 @@ const ManageFormations = () => {
               rules={[{ required: true, message: "Veuillez entrer la durée" }]}
             >
               <InputNumber min={1} placeholder="Durée (heures)" />
-            </Form.Item>
-            <Form.Item
-              name="prix"
-              label="Prix"
-              rules={[{ required: true, message: "Veuillez entrer le prix" }]}
-            >
-              <InputNumber min={0} placeholder="Prix" />
-            </Form.Item>
-            <Form.Item
-              name="image"
-              label="Image"
-              valuePropName="fileList"
-              getValueFromEvent={handleFileChange}
-            >
-              <Upload
-                listType="picture"
-                beforeUpload={() => false}
-                onChange={handleFileChange}
-              >
-                <Button icon={<UploadOutlined />}>Upload Image</Button>
-              </Upload>
-            </Form.Item>
-            <Form.Item
-              name="status"
-              label="Statut"
-              initialValue={selectedFormation?.status}
-              rules={[
-                { required: true, message: "Veuillez sélectionner le statut" },
-              ]}
-            >
-              <Select placeholder="Sélectionnez le statut">
-                <Option value="active">Active</Option>
-                <Option value="en attente">En attente</Option>
-                <Option value="rejetée">Rejetée</Option>
-              </Select>
             </Form.Item>
             <Form.Item>
               <Button type="primary" htmlType="submit">

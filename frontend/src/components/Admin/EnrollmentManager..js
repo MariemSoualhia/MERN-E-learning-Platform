@@ -154,6 +154,9 @@ const EnrollmentManager = () => {
                 <strong>Date de Fin:</strong>{" "}
                 {new Date(selectedDetails.dateFin).toLocaleDateString()}
               </p>
+              <p>
+                <strong>Niveau:</strong> {selectedDetails.niveau}
+              </p>
             </div>
           )}
         </Modal>

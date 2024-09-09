@@ -224,7 +224,7 @@ const MyEnrollments = () => {
                         <strong>Durée:</strong> {formation.duree} heures
                       </Typography>
                       <Typography variant="body2" sx={{ mt: 1 }}>
-                        <strong>Prix:</strong> {formation.prix}
+                        <strong>Niveau:</strong> {formation.niveau}
                       </Typography>
                     </Box>
                     <Box sx={{ textAlign: "center", mb: 2 }}>
@@ -311,7 +311,7 @@ const MyEnrollments = () => {
                         <strong>Durée:</strong> {formation.duree} heures
                       </Typography>
                       <Typography variant="body2" sx={{ mt: 1 }}>
-                        <strong>Prix:</strong> {formation.prix}
+                        <strong>Niveau:</strong> {formation.niveau}
                       </Typography>
                     </Box>
                     <Box sx={{ textAlign: "center", mb: 2 }}>
@@ -402,7 +402,7 @@ const MyEnrollments = () => {
                   <strong>Durée:</strong> {currentFormation.duree} heures
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
-                  <strong>Prix:</strong> {currentFormation.prix}
+                  <strong>Niveau:</strong> {currentFormation.niveau}
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 1 }}>
                   <strong>Formateur:</strong>{" "}

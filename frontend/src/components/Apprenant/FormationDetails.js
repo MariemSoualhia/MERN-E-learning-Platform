@@ -102,8 +102,8 @@ const FormationDetails = () => {
               <Typography variant="body1" gutterBottom>
                 Durée: {formation.duree} heures
               </Typography>
-              <Typography variant="body1" gutterBottom>
-                Prix: {formation.prix} DT
+              <Typography variant="body1">
+                Niveau: {formation.niveau}
               </Typography>
               <Typography variant="body1" gutterBottom>
                 Date de début:{" "}

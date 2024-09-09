@@ -215,6 +215,10 @@ const PendingFormations = () => {
                 { label: "Description", value: selectedFormation.description },
                 { label: "Spécialité", value: selectedFormation.specialty },
                 {
+                  label: "Niveau",
+                  value: selectedFormation.niveau,
+                },
+                {
                   label: "Date de début",
                   value: new Date(selectedFormation.dateDebut).toLocaleString(),
                 },
@@ -223,7 +227,6 @@ const PendingFormations = () => {
                   value: new Date(selectedFormation.dateFin).toLocaleString(),
                 },
                 { label: "Durée", value: `${selectedFormation.duree} heures` },
-                { label: "Prix", value: `${selectedFormation.prix} €` },
               ]}
               renderItem={(item) => (
                 <List.Item>

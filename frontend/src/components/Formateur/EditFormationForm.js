@@ -23,10 +23,11 @@ const EditFormationForm = ({ formation, onClose, onUpdate }) => {
     dayjs(formation.dateFin),
   ]);
   const [duree, setDuree] = useState(formation.duree || "");
-  const [prix, setPrix] = useState(formation.prix || "");
   const [specialty, setSpecialty] = useState(formation.specialty || "");
   const [meetLink, setMeetLink] = useState(formation.meetLink || "");
+  const [niveau, setNiveau] = useState(formation.niveau || ""); // Ajout du niveau
   const [file, setFile] = useState(null);
+  const user = JSON.parse(localStorage.getItem("currentuser"));
 
   useEffect(() => {
     setFile(null); // Clear the file input when formation changes
@@ -45,8 +46,8 @@ const EditFormationForm = ({ formation, onClose, onUpdate }) => {
     formData.append("dateDebut", dateDebut);
     formData.append("dateFin", dateFin);
     formData.append("duree", duree);
-    formData.append("prix", prix);
-    formData.append("specialty", specialty);
+    formData.append("specialty", user.specialty);
+    formData.append("niveau", niveau);
     formData.append("meetLink", meetLink);
     if (file) {
       formData.append("image", file);
@@ -123,27 +124,19 @@ const EditFormationForm = ({ formation, onClose, onUpdate }) => {
             ),
           }}
         />
-        <TextField
-          fullWidth
-          label="Prix"
-          value={prix}
-          onChange={(e) => setPrix(e.target.value)}
-          margin="normal"
-          type="number"
-          required
-        />
+
         <TextField
           fullWidth
           select
-          label="Spécialité"
-          value={specialty}
-          onChange={(e) => setSpecialty(e.target.value)}
+          label="Niveau"
+          value={niveau}
+          onChange={(e) => setNiveau(e.target.value)}
           margin="normal"
           required
         >
-          <MenuItem value="dev">Dev</MenuItem>
-          <MenuItem value="réseau">Réseau</MenuItem>
-          <MenuItem value="gestion de projets">Gestion de projets</MenuItem>
+          <MenuItem value="débutant">Débutant</MenuItem>
+          <MenuItem value="intermédiaire">Intermédiaire</MenuItem>
+          <MenuItem value="avancé">Avancé</MenuItem>
         </TextField>
         <TextField
           fullWidth

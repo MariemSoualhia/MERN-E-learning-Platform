@@ -52,6 +52,9 @@ const Formations = () => {
                 <Typography variant="body2" color="text.secondary">
                   {formation.description}
                 </Typography>
+                <Typography variant="body1">
+                  Niveau: {formation.niveau}
+                </Typography>
               </CardContent>
               <CardActions>
                 <Button

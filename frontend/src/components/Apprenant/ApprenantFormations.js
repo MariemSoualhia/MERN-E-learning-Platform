@@ -70,8 +70,8 @@ const ApprenantFormations = () => {
                   <Typography variant="body2">
                     Durée: {formation.duree} heures
                   </Typography>
-                  <Typography variant="body2">
-                    Prix: {formation.prix} DT
+                  <Typography variant="body1">
+                    Niveau: {formation.niveau}
                   </Typography>
                 </Box>
                 <Box sx={{ textAlign: "center", mb: 2 }}>

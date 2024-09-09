@@ -31,10 +31,6 @@ const FormationSchema = new mongoose.Schema({
     type: Number, // Durée en heures
     required: true,
   },
-  prix: {
-    type: Number,
-    required: true,
-  },
   image: {
     type: String,
     default: "", // URL de l'image
@@ -44,7 +40,9 @@ const FormationSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  meetLink: { type: String }, // Nouveau champ pour le lien Google Meet
+  meetLink: {
+    type: String,
+  },
   quiz: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Quiz",
@@ -53,17 +51,39 @@ const FormationSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  apprenants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  apprenants: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
   quizSubmissions: [
-    { type: mongoose.Schema.Types.ObjectId, ref: "QuizSubmission" },
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "QuizSubmission",
+    },
   ],
   videos: [
     {
-      url: { type: String, required: false },
-      title: { type: String, required: false },
-      date: { type: Date, default: Date.now },
+      url: {
+        type: String,
+        required: false,
+      },
+      title: {
+        type: String,
+        required: false,
+      },
+      date: {
+        type: Date,
+        default: Date.now,
+      },
     },
   ],
+  niveau: {
+    type: String,
+    enum: ["débutant", "intermédiaire", "avancé"], // Nouveau champ niveau
+    required: true,
+  },
 });
 
 module.exports = mongoose.model("Formation", FormationSchema);

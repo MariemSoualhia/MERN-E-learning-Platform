@@ -42,6 +42,7 @@ exports.addFormation = [
       prix,
       specialty,
       formateur,
+      niveau,
     } = req.body;
 
     try {
@@ -72,6 +73,7 @@ exports.addFormation = [
         dateFin,
         duree,
         prix,
+        niveau,
         image: req.file ? req.file.filename : "", // Stocker le nom du fichier de l'image
         formateur: formateurId,
       });
@@ -296,6 +298,7 @@ exports.updateFormation = [
       prix,
       specialty,
       meetLink,
+      niveau,
     } = req.body;
 
     try {
@@ -322,7 +325,7 @@ exports.updateFormation = [
       formation.prix = prix || formation.prix;
       formation.meetLink = meetLink || formation.meetLink;
       formation.image = req.file ? req.file.filename : formation.image;
-
+      formation.niveau = niveau || formation.niveau;
       await formation.save();
 
       // Send a notification via socket.io
@@ -933,7 +936,10 @@ exports.getEnrollments = async (req, res) => {
     // Fetch all enrollments, populate apprenant and formation fields
     const enrollments = await Enrollment.find()
       .populate("apprenant", "name email") // Populate apprenant with name and email fields
-      .populate("formation", "title description dateDebut dateFin formateur"); // Populate formation with multiple fields
+      .populate(
+        "formation",
+        "title description dateDebut dateFin formateur niveau"
+      ); // Populate formation with multiple fields
 
     // Send the populated enrollments as a JSON response
     res.json(enrollments);

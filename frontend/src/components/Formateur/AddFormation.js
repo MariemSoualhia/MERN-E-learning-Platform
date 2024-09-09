@@ -7,6 +7,7 @@ import {
   InputNumber,
   message,
   Upload,
+  Select,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { Box, Container, Typography } from "@mui/material";
@@ -16,6 +17,7 @@ import axios from "axios";
 import theme from "../../theme";
 
 const { RangePicker } = DatePicker;
+const { Option } = Select;
 
 const StyledForm = styled(Form)`
   .ant-form-item-label > label {
@@ -54,7 +56,6 @@ const AddFormation = () => {
   const user = JSON.parse(localStorage.getItem("currentuser"));
 
   const handleFileChange = (info) => {
-    console.log(info);
     if (info.file.status === "removed") {
       setFile(null);
     } else {
@@ -72,11 +73,10 @@ const AddFormation = () => {
     formData.append("dateDebut", dateDebut);
     formData.append("dateFin", dateFin);
     formData.append("duree", rest.duree);
-    formData.append("prix", rest.prix);
     formData.append("specialty", user.specialty);
+    formData.append("niveau", rest.niveau); // Ajout du niveau
 
     if (file) {
-      console.log(file);
       formData.append("image", file);
     }
 
@@ -139,11 +139,17 @@ const AddFormation = () => {
             <InputNumber min={1} placeholder="Durée (heures)" />
           </Form.Item>
           <Form.Item
-            name="prix"
-            label="Prix"
-            rules={[{ required: true, message: "Veuillez entrer le prix" }]}
+            name="niveau"
+            label="Niveau"
+            rules={[
+              { required: true, message: "Veuillez sélectionner le niveau" },
+            ]}
           >
-            <InputNumber min={0} placeholder="Prix" />
+            <Select placeholder="Sélectionnez le niveau">
+              <Option value="débutant">Débutant</Option>
+              <Option value="intermédiaire">Intermédiaire</Option>
+              <Option value="avancé">Avancé</Option>
+            </Select>
           </Form.Item>
           <Form.Item
             name="image"
