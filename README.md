@@ -27,6 +27,26 @@ Bienvenue dans le projet **E-Learning Platform**. Cette application est conçue 
 - **Support de l'Upload d'Images** : Gestion des images pour les profils et les formations.
 - **Notifications en Temps Réel** : Notifications via socket.io pour les mises à jour en temps réel.
 
+### Page home
+
+![Page homes](./public/home.png)
+
+### Page connexion
+
+![Page connexion](./public/login.png)
+
+### Page Inscription
+
+![Page Inscription](./public/signup.png)
+
+### Page nos formations
+
+![Page Inscription](./public/formations.png)
+
+### Page dashbords formateur
+
+![Page Inscription](./public/dashbord.png)
+
 ## Installation
 
 ### Prérequis
